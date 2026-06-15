@@ -32,7 +32,7 @@ export default function AnalyticsPage() {
                     <b>{count} ({pct}%)</b>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#006aa0] rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                    <div className="h-full bg-[#e51b72] rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
@@ -45,7 +45,7 @@ export default function AnalyticsPage() {
           <div className="flex items-end gap-3 h-24 pt-2">
             {[60, 80, 95, 70, 55, 35, 20].map((val, idx) => (
               <div key={idx} className="flex flex-col items-center gap-1 flex-1">
-                <div className={`w-full rounded-t-md ${idx === 2 ? "bg-teal-400" : "bg-[#006aa0]"}`} style={{ height: `${val}%` }} />
+                <div className={`w-full rounded-t-md ${idx === 2 ? "bg-teal-400" : "bg-[#e51b72]"}`} style={{ height: `${val}%` }} />
                 <span className="text-[10px] text-gray-400 font-bold mt-1">{["M","T","W","T","F","S","S"][idx]}</span>
               </div>
             ))}

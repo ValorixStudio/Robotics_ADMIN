@@ -1,4 +1,4 @@
-﻿import { Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function StudentsPage() {
   return (
@@ -12,7 +12,7 @@ export default function StudentsPage() {
             <button key={t} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${t === "All" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-800"}`}>{t}</button>
           ))}
         </div>
-        <button className="px-4 py-2 rounded-xl bg-[#006aa0] hover:bg-[#005a8a] text-white text-xs font-semibold transition-colors">+ Add Student</button>
+        <button className="px-4 py-2 rounded-xl bg-[#e51b72] hover:bg-[#bd145c] text-white text-xs font-semibold transition-colors">+ Add Student</button>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">

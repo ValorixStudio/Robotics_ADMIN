@@ -1,4 +1,4 @@
-ï»¿export default function ResourcesPage() {
+export default function ResourcesPage() {
   return (
     <>
       <h1 className="text-2xl font-bold tracking-tight text-gray-800">Resources</h1>
@@ -10,7 +10,7 @@
             <button key={t} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${t === "All" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-800"}`}>{t}</button>
           ))}
         </div>
-        <button className="px-4 py-2 rounded-xl bg-[#006aa0] hover:bg-[#005a8a] text-white text-xs font-semibold transition-colors">+ Upload Resource</button>
+        <button className="px-4 py-2 rounded-xl bg-[#e51b72] hover:bg-[#bd145c] text-white text-xs font-semibold transition-colors">+ Upload Resource</button>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
@@ -24,10 +24,10 @@
             </tr></thead>
             <tbody className="divide-y divide-gray-100">
               {[
-                { name:"â‰¡Æ’Ã´Ã¤ Robotics Handbook.pdf", type:"PDF",   typeC:"bg-red-100 text-red-700",   course:"Robotics 101",  by:"Ms. Kapoor", dl:"142", date:"Jun 1",  action:"Î“Â¼Ã§" },
-                { name:"â‰¡Æ’Ã„Ã‘ Intro to Sensors.mp4",  type:"Video", typeC:"bg-blue-100 text-blue-700", course:"Robotics 101",  by:"Ms. Kapoor", dl:"98",  date:"Jun 3",  action:"Î“Ã»â•¢" },
-                { name:"â‰¡Æ’Ã´Ã¤ Python Cheatsheet.pdf", type:"PDF",   typeC:"bg-red-100 text-red-700",   course:"Python Basics", by:"Mr. Sharma", dl:"210", date:"May 28", action:"Î“Â¼Ã§" },
-                { name:"â‰¡Æ’Ã¶Ã¹ Arduino Docs",           type:"Link",  typeC:"bg-cyan-100 text-cyan-700", course:"Robotics 101",  by:"Admin",      dl:"Î“Ã‡Ã¶",   date:"May 20", action:"Î“Ã¥Ã¹" },
+                { name:"=ƒôä Robotics Handbook.pdf", type:"PDF",   typeC:"bg-red-100 text-red-700",   course:"Robotics 101",  by:"Ms. Kapoor", dl:"142", date:"Jun 1",  action:"G¼ç" },
+                { name:"=ƒÄÑ Intro to Sensors.mp4",  type:"Video", typeC:"bg-blue-100 text-blue-700", course:"Robotics 101",  by:"Ms. Kapoor", dl:"98",  date:"Jun 3",  action:"Gû¦" },
+                { name:"=ƒôä Python Cheatsheet.pdf", type:"PDF",   typeC:"bg-red-100 text-red-700",   course:"Python Basics", by:"Mr. Sharma", dl:"210", date:"May 28", action:"G¼ç" },
+                { name:"=ƒöù Arduino Docs",           type:"Link",  typeC:"bg-cyan-100 text-cyan-700", course:"Robotics 101",  by:"Admin",      dl:"GÇö",   date:"May 20", action:"Gåù" },
               ].map(r => (
                 <tr key={r.name} className="hover:bg-gray-50/50">
                   <td className="p-4 font-semibold text-gray-800 text-xs">{r.name}</td>

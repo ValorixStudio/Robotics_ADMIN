@@ -1,4 +1,4 @@
-ï»¿export default function QuizzesPage() {
+export default function QuizzesPage() {
   return (
     <>
       <h1 className="text-2xl font-bold tracking-tight text-gray-800">Quizzes</h1>
@@ -10,12 +10,12 @@
             <button key={t} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${t === "All Quizzes" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-800"}`}>{t}</button>
           ))}
         </div>
-        <button className="px-4 py-2 rounded-xl bg-[#006aa0] hover:bg-[#005a8a] text-white text-xs font-semibold transition-colors">+ Create Quiz</button>
+        <button className="px-4 py-2 rounded-xl bg-[#e51b72] hover:bg-[#bd145c] text-white text-xs font-semibold transition-colors">+ Create Quiz</button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-800 mb-4">Î“Â¥Ã´ Quiz Builder Î“Ã‡Ã¶ Sample</h3>
+          <h3 className="text-sm font-bold text-gray-800 mb-4">G¥ô Quiz Builder GÇö Sample</h3>
           {[
             { q:"Q1. Which language is used to program Arduino?", opts:["C/C++","Python","Java","Ruby"], correct:0 },
             { q:"Q2. What does PWM stand for?", opts:["Power Wave Management","Pulse Width Modulation","Program Wire Method","Pulse Width Management"], correct:1 },
@@ -30,11 +30,11 @@
               ))}
             </div>
           ))}
-          <button className="px-4 py-2 rounded-xl bg-[#006aa0] hover:bg-[#005a8a] text-white text-xs font-semibold mt-1 transition-colors">+ Add Question</button>
+          <button className="px-4 py-2 rounded-xl bg-[#e51b72] hover:bg-[#bd145c] text-white text-xs font-semibold mt-1 transition-colors">+ Add Question</button>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-800 mb-4">â‰¡Æ’Ã´Ã¨ Recent Quiz Results</h3>
+          <h3 className="text-sm font-bold text-gray-800 mb-4">=ƒôè Recent Quiz Results</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
               <thead><tr className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase font-semibold">

@@ -1,11 +1,11 @@
-ï»¿export default function TeachersPage() {
+export default function TeachersPage() {
   return (
     <>
       <h1 className="text-2xl font-bold tracking-tight text-gray-800">Teachers</h1>
       <p className="text-sm text-gray-500 -mt-4">Manage faculty and instructors</p>
 
       <div className="flex justify-end">
-        <button className="px-4 py-2 rounded-xl bg-[#006aa0] hover:bg-[#005a8a] text-white text-xs font-semibold transition-colors">+ Add Teacher</button>
+        <button className="px-4 py-2 rounded-xl bg-[#e51b72] hover:bg-[#bd145c] text-white text-xs font-semibold transition-colors">+ Add Teacher</button>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
@@ -19,9 +19,9 @@
             </tr></thead>
             <tbody className="divide-y divide-gray-100">
               {[
-                { name:"Ms. Kapoor", subject:"Robotics",    courses:2, students:48, rating:"Î“Â¡Ã‰ 4.8", status:"Active",  stC:"bg-green-100 text-green-700", bg:"bg-blue-500"   },
-                { name:"Mr. Sharma", subject:"Programming", courses:1, students:36, rating:"Î“Â¡Ã‰ 4.6", status:"Active",  stC:"bg-green-100 text-green-700", bg:"bg-green-500"  },
-                { name:"Dr. Verma",  subject:"AI & ML",     courses:1, students:0,  rating:"Î“Â¡Ã‰ Î“Ã‡Ã¶",   status:"Pending", stC:"bg-amber-100 text-amber-700", bg:"bg-purple-500" },
+                { name:"Ms. Kapoor", subject:"Robotics",    courses:2, students:48, rating:"G¡É 4.8", status:"Active",  stC:"bg-green-100 text-green-700", bg:"bg-blue-500"   },
+                { name:"Mr. Sharma", subject:"Programming", courses:1, students:36, rating:"G¡É 4.6", status:"Active",  stC:"bg-green-100 text-green-700", bg:"bg-green-500"  },
+                { name:"Dr. Verma",  subject:"AI & ML",     courses:1, students:0,  rating:"G¡É GÇö",   status:"Pending", stC:"bg-amber-100 text-amber-700", bg:"bg-purple-500" },
               ].map(t => (
                 <tr key={t.name} className="hover:bg-gray-50/50">
                   <td className="p-4">

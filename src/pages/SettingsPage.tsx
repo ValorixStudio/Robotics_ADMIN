@@ -12,32 +12,32 @@
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-800 mb-4">≡ƒÅ½ School Information</h3>
+          <h3 className="text-sm font-bold text-gray-800 mb-4">=ƒÅ½ School Information</h3>
           <div className="mb-4">
             <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Institution Name</label>
-            <input defaultValue="Circuit Studio" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-[#006aa0] transition-colors" />
+            <input defaultValue="Teachly Education" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-[#e51b72] transition-colors" />
           </div>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Academic Year</label>
-              <input defaultValue="2025-26" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-[#006aa0] transition-colors" />
+              <input defaultValue="2025-26" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-[#e51b72] transition-colors" />
             </div>
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Timezone</label>
-              <select className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-[#006aa0] transition-colors bg-white">
+              <select className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-[#e51b72] transition-colors bg-white">
                 <option>Asia/Kolkata (IST)</option>
               </select>
             </div>
           </div>
           <div className="mb-5">
             <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Admin Email</label>
-            <input type="email" defaultValue="admin@educore.in" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-[#006aa0] transition-colors" />
+            <input type="email" defaultValue="admin@educore.in" className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-[#e51b72] transition-colors" />
           </div>
-          <button className="px-5 py-2.5 rounded-xl bg-[#006aa0] hover:bg-[#005a8a] text-white text-sm font-semibold transition-colors">Save Changes</button>
+          <button className="px-5 py-2.5 rounded-xl bg-[#e51b72] hover:bg-[#bd145c] text-white text-sm font-semibold transition-colors">Save Changes</button>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-800 mb-4">≡ƒöö Notification Preferences</h3>
+          <h3 className="text-sm font-bold text-gray-800 mb-4">=ƒöö Notification Preferences</h3>
           <div className="flex flex-col gap-5">
             {[
               { title:"Assignment Deadline Reminders", sub:"Email + SMS",       on:true  },

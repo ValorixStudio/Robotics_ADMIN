@@ -1,4 +1,4 @@
-ï»¿import { StatCard } from "@/components";
+import { StatCard } from "@/components";
 
 export default function AttendancePage() {
   return (
@@ -7,14 +7,14 @@ export default function AttendancePage() {
       <p className="text-sm text-gray-500 -mt-4">Track and manage student attendance</p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-        <StatCard label="Present Today"  value="112" delta="of 126 students" deltaColor="text-gray-500"   icon="Î“Â£Ã " iconBg="bg-green-50"  />
-        <StatCard label="Absent Today"   value="14"  delta="5 notified"      deltaColor="text-red-500"    icon="Î“Â¥Ã®" iconBg="bg-red-50"    />
-        <StatCard label="Avg Attendance" value="88%" delta="This month"                                   icon="â‰¡Æ’Ã´Ã¨" iconBg="bg-blue-50"   />
-        <StatCard label="At Risk"        value="7"   delta="Below 75%"       deltaColor="text-orange-500" icon="Î“ÃœÃ¡âˆ©â••Ã…" iconBg="bg-orange-50" />
+        <StatCard label="Present Today"  value="112" delta="of 126 students" deltaColor="text-gray-500"   icon="G£à" iconBg="bg-green-50"  />
+        <StatCard label="Absent Today"   value="14"  delta="5 notified"      deltaColor="text-red-500"    icon="G¥î" iconBg="bg-red-50"    />
+        <StatCard label="Avg Attendance" value="88%" delta="This month"                                   icon="=ƒôè" iconBg="bg-blue-50"   />
+        <StatCard label="At Risk"        value="7"   delta="Below 75%"       deltaColor="text-orange-500" icon="GÜán+Å" iconBg="bg-orange-50" />
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-gray-800 mb-4">â‰¡Æ’Ã¶Ã‘ Attendance Heatmap Î“Ã‡Ã¶ June 2026</h3>
+        <h3 className="text-sm font-bold text-gray-800 mb-4">=ƒöÑ Attendance Heatmap GÇö June 2026</h3>
         <div className="flex gap-1.5 mb-2">
           {["Mon","Tue","Wed","Thu","Fri"].map(d => (
             <div key={d} className="w-6 text-[10px] text-center text-gray-400 font-semibold">{d}</div>
@@ -42,8 +42,8 @@ export default function AttendancePage() {
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-gray-800">â‰¡Æ’Ã´Ã¯ Today&apos;s Register</h3>
-          <button className="px-3 py-1.5 rounded-lg bg-[#006aa0] text-white text-xs font-semibold hover:bg-[#005a8a] transition-colors">Mark Attendance</button>
+          <h3 className="text-sm font-bold text-gray-800">=ƒôï Today&apos;s Register</h3>
+          <button className="px-3 py-1.5 rounded-lg bg-[#e51b72] text-white text-xs font-semibold hover:bg-[#bd145c] transition-colors">Mark Attendance</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
@@ -54,7 +54,7 @@ export default function AttendancePage() {
             <tbody className="divide-y divide-gray-100">
               {[
                 { name:"Arjun Patel",  grade:10, checkin:"08:45 AM", status:"Present", sc:"bg-green-100 text-green-700", bg:"bg-indigo-500"  },
-                { name:"Priya Sharma", grade:9,  checkin:"Î“Ã‡Ã¶",        status:"Absent",  sc:"bg-red-100 text-red-700",     bg:"bg-purple-500"  },
+                { name:"Priya Sharma", grade:9,  checkin:"GÇö",        status:"Absent",  sc:"bg-red-100 text-red-700",     bg:"bg-purple-500"  },
                 { name:"Rohit Kumar",  grade:11, checkin:"09:02 AM", status:"Present", sc:"bg-green-100 text-green-700", bg:"bg-emerald-500" },
               ].map(s => (
                 <tr key={s.name} className="hover:bg-gray-50/50">

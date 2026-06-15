@@ -209,12 +209,12 @@ export default function RoleAndPermissionPage() {
 
       </div>
 
-      <div className="grid min-h-[650px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm lg:h-[calc(100vh-190px)] lg:grid-cols-[290px_minmax(0,1fr)]">
-        <aside className="flex flex-col border-b border-gray-200 bg-gray-50/70 lg:border-b-0 lg:border-r">
-          <div className="border-b border-gray-200 p-4">
+      <div className="grid min-h-[650px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-[#111113] dark:shadow-black/30 lg:h-[calc(100vh-190px)] lg:grid-cols-[290px_minmax(0,1fr)]">
+        <aside className="flex flex-col border-b border-gray-200 bg-gray-50/70 dark:border-zinc-800 dark:bg-[#171719] lg:border-b-0 lg:border-r">
+          <div className="border-b border-gray-200 p-4 dark:border-zinc-800">
             <button
               onClick={() => { setRoleNameError(""); setShowModal(true); }}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#006aa0] px-4 py-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#005a8a]"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#e51b72] px-4 py-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#bd145c]"
             >
               <span className="text-base leading-none">+</span> Add new role
             </button>
@@ -223,7 +223,7 @@ export default function RoleAndPermissionPage() {
           <div className="flex-1 p-3">
             <div className="flex items-center justify-between px-2 py-2">
               <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400">Role list</span>
-              <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">{roles.length}</span>
+              <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500 dark:bg-zinc-800 dark:text-zinc-400">{roles.length}</span>
             </div>
             <div className="space-y-1.5">
               {roles.map((role) => {
@@ -234,8 +234,8 @@ export default function RoleAndPermissionPage() {
                     onClick={() => { setActiveRoleId(role.id); setSaved(false); }}
                     className={`w-full rounded-xl border p-3 text-left transition-all ${
                       isActive
-                        ? "border-blue-200 bg-white shadow-sm ring-1 ring-blue-100"
-                        : "border-transparent hover:border-gray-200 hover:bg-white"
+                        ? "border-pink-300 bg-white shadow-sm ring-1 ring-pink-100 dark:border-[#e51b72]/60 dark:bg-[#232326] dark:ring-[#e51b72]/20"
+                        : "border-transparent hover:border-gray-200 hover:bg-white dark:hover:border-zinc-700 dark:hover:bg-[#202023]"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -243,13 +243,13 @@ export default function RoleAndPermissionPage() {
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 font-bold text-gray-800">
                           <span className="truncate text-sm">{role.name}</span>
-                          {role.protected && <span className="rounded bg-violet-50 px-1.5 py-0.5 text-[9px] uppercase text-violet-600">Core</span>}
+                          {role.protected && <span className="rounded bg-violet-50 px-1.5 py-0.5 text-[9px] uppercase text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">Core</span>}
                         </span>
                         <span className="mt-0.5 block text-[11px] text-gray-400">
                           {role.userCount} users - {role.permissions.length} permissions
                         </span>
                       </span>
-                      <span className={`text-lg ${isActive ? "text-[#006aa0]" : "text-gray-300"}`}>›</span>
+                      <span className={`text-lg ${isActive ? "text-[#e51b72]" : "text-gray-300"}`}>›</span>
                     </div>
                   </button>
                 );
@@ -259,7 +259,7 @@ export default function RoleAndPermissionPage() {
         </aside>
 
         <section className="flex min-w-0 flex-col lg:min-h-0">
-          <div className="border-b border-gray-200 px-5 py-5 sm:px-7">
+          <div className="border-b border-gray-200 px-5 py-5 dark:border-zinc-800 dark:bg-[#141416] sm:px-7">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-start gap-3">
                 <div className={`flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-sm ${activeRole.color}`}>
@@ -268,7 +268,7 @@ export default function RoleAndPermissionPage() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg font-bold text-gray-900">{activeRole.name}</h2>
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">{activeRole.userCount} assigned</span>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500 dark:bg-zinc-800 dark:text-zinc-400">{activeRole.userCount} assigned</span>
                   </div>
                   <p className="mt-1 text-xs text-gray-500">{activeRole.description}</p>
                 </div>
@@ -281,7 +281,7 @@ export default function RoleAndPermissionPage() {
                 )}
                 <button
                   onClick={() => { setSaved(true); window.setTimeout(() => setSaved(false), 1800); }}
-                  className="rounded-xl bg-[#006aa0] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#005a8a]"
+                  className="rounded-xl bg-[#e51b72] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#bd145c]"
                 >
                   {saved ? "Permissions saved" : "Save changes"}
                 </button>
@@ -289,29 +289,29 @@ export default function RoleAndPermissionPage() {
             </div>
           </div>
 
-          <div className="p-5 sm:p-7 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+          <div className="p-5 dark:bg-[#111113] sm:p-7 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h3 className="text-sm font-bold text-gray-800">Permission access</h3>
-                <p className="mt-1 text-xs text-gray-500"><span className="font-bold text-[#006aa0]">{activeRole.permissions.length} of {PERMISSIONS.length}</span> permissions enabled</p>
-                <div className="mt-2 h-1.5 w-48 overflow-hidden rounded-full bg-gray-100">
-                  <div className="h-full rounded-full bg-[#006aa0] transition-all" style={{ width: `${permissionProgress}%` }} />
+                <p className="mt-1 text-xs text-gray-500"><span className="font-bold text-[#e51b72]">{activeRole.permissions.length} of {PERMISSIONS.length}</span> permissions enabled</p>
+                <div className="mt-2 h-1.5 w-48 overflow-hidden rounded-full bg-gray-100 dark:bg-zinc-800">
+                  <div className="h-full rounded-full bg-[#e51b72] transition-all" style={{ width: `${permissionProgress}%` }} />
                 </div>
               </div>
               <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                 <button
                   onClick={toggleAllBlocks}
-                  className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-bold text-gray-600 transition-colors hover:border-blue-200 hover:text-[#006aa0]"
+                  className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-bold text-gray-600 transition-colors hover:border-pink-200 hover:text-[#e51b72] dark:border-zinc-700 dark:bg-[#19191c] dark:text-zinc-300 dark:hover:border-[#e51b72]/50"
                 >
                   {allBlocksHidden ? "Expand all" : "Collapse all"}
                 </button>
-                <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-gray-400 focus-within:border-[#006aa0] sm:w-64 sm:flex-none">
+                <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-gray-400 focus-within:border-[#e51b72] dark:border-zinc-700 dark:bg-[#19191c] dark:text-zinc-500 sm:w-64 sm:flex-none">
                   <SearchIcon />
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search permissions"
-                    className="w-full bg-transparent text-xs text-gray-700 outline-none placeholder:text-gray-400"
+                    className="w-full bg-transparent text-xs text-gray-700 outline-none placeholder:text-gray-400 dark:text-zinc-200 dark:placeholder:text-zinc-600"
                   />
                   {search && <button type="button" onClick={() => setSearch("")} className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" aria-label="Clear permission search">x</button>}
                 </label>
@@ -328,8 +328,8 @@ export default function RoleAndPermissionPage() {
                 const isCollapsed = collapsedCategories.includes(category);
 
                 return (
-                  <div key={category} className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                    <div className={`flex items-center justify-between bg-gray-50/80 px-4 py-3 ${isCollapsed ? "" : "border-b border-gray-100"}`}>
+                  <div key={category} className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-zinc-700 dark:bg-[#18181b]">
+                    <div className={`flex items-center justify-between bg-gray-50/80 px-4 py-3 dark:bg-[#232326] ${isCollapsed ? "" : "border-b border-gray-100 dark:border-zinc-700"}`}>
                       <button
                         onClick={() => toggleCategoryBlock(category)}
                         aria-expanded={!isCollapsed}
@@ -341,24 +341,24 @@ export default function RoleAndPermissionPage() {
                           <span className="mt-0.5 block text-[10px] text-gray-400">{selectedCount} of {allCategoryPermissions.length} selected</span>
                         </span>
                       </button>
-                      <button onClick={() => toggleCategory(category)} className="ml-3 text-[11px] font-bold text-[#006aa0] hover:underline">
+                      <button onClick={() => toggleCategory(category)} className="ml-3 text-[11px] font-bold text-[#e51b72] hover:underline">
                         {allSelected ? "Clear all" : "Select all"}
                       </button>
                     </div>
                     {!isCollapsed && (
-                      <div className="divide-y divide-gray-100">
+                      <div className="divide-y divide-gray-100 dark:divide-zinc-700">
                         {visiblePermissions.map((permission) => {
                           const enabled = activeRole.permissions.includes(permission.id);
                           return (
-                            <label key={permission.id} className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-blue-50/30">
+                            <label key={permission.id} className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-pink-50/30 dark:hover:bg-white/[0.035]">
                               <input
                                 type="checkbox"
                                 checked={enabled}
                                 onChange={() => togglePermission(permission.id)}
                                 className="sr-only"
                               />
-                              <span className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${enabled ? "bg-[#006aa0]" : "bg-gray-200"}`}>
-                                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${enabled ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+                              <span className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${enabled ? "bg-[#e51b72]" : "bg-gray-200 dark:bg-zinc-700"}`}>
+                                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform dark:bg-zinc-100 ${enabled ? "translate-x-[18px]" : "translate-x-0.5"}`} />
                               </span>
                               <span className="min-w-0">
                                 <span className="block text-xs font-semibold text-gray-700">{permission.name}</span>
@@ -378,7 +378,7 @@ export default function RoleAndPermissionPage() {
               <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center">
                 <p className="text-sm font-semibold text-gray-600">No permissions found</p>
                 <p className="mt-1 text-xs text-gray-400">Try a different search term.</p>
-                <button onClick={() => setSearch("")} className="mt-3 text-xs font-bold text-[#006aa0] hover:underline">Clear search</button>
+                <button onClick={() => setSearch("")} className="mt-3 text-xs font-bold text-[#e51b72] hover:underline">Clear search</button>
               </div>
             )}
           </div>
@@ -387,25 +387,25 @@ export default function RoleAndPermissionPage() {
 
       {showModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-gray-950/45 p-4" onMouseDown={() => setShowModal(false)}>
-          <form onSubmit={addRole} onMouseDown={(event) => event.stopPropagation()} className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="bg-[#006aa0] px-6 py-5 text-white">
+          <form onSubmit={addRole} onMouseDown={(event) => event.stopPropagation()} className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-[#18181b]">
+            <div className="bg-[#e51b72] px-6 py-5 text-white">
               <h2 className="text-base font-bold">Add new role</h2>
               <p className="mt-1 text-xs text-white/70">Create the role first, then configure its permissions.</p>
             </div>
             <div className="space-y-4 p-6">
               <label className="block">
                 <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-gray-500">Role name</span>
-                <input autoFocus value={roleName} onChange={(event) => { setRoleName(event.target.value); setRoleNameError(""); }} placeholder="e.g. Lab Coordinator" className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[#006aa0] ${roleNameError ? "border-red-300 bg-red-50/40" : "border-gray-200"}`} />
+                <input autoFocus value={roleName} onChange={(event) => { setRoleName(event.target.value); setRoleNameError(""); }} placeholder="e.g. Lab Coordinator" className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[#e51b72] ${roleNameError ? "border-red-300 bg-red-50/40" : "border-gray-200"}`} />
                 {roleNameError && <span className="mt-1.5 block text-[11px] font-medium text-red-600">{roleNameError}</span>}
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-gray-500">Description</span>
-                <textarea value={roleDescription} onChange={(event) => setRoleDescription(event.target.value)} placeholder="What can this role do?" rows={3} className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-[#006aa0]" />
+                <textarea value={roleDescription} onChange={(event) => setRoleDescription(event.target.value)} placeholder="What can this role do?" rows={3} className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-[#e51b72]" />
               </label>
             </div>
-            <div className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50 px-6 py-4">
+            <div className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50 px-6 py-4 dark:border-zinc-700 dark:bg-[#202023]">
               <button type="button" onClick={() => setShowModal(false)} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-white">Cancel</button>
-              <button type="submit" className="rounded-xl bg-[#006aa0] px-4 py-2 text-xs font-bold text-white hover:bg-[#005a8a]">Create role</button>
+              <button type="submit" className="rounded-xl bg-[#e51b72] px-4 py-2 text-xs font-bold text-white hover:bg-[#bd145c]">Create role</button>
             </div>
           </form>
         </div>
@@ -413,7 +413,7 @@ export default function RoleAndPermissionPage() {
 
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[210] flex items-center justify-center bg-gray-950/45 p-4" onMouseDown={() => setShowDeleteConfirm(false)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-[#18181b]" onMouseDown={(event) => event.stopPropagation()}>
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-xl font-bold text-red-600">!</div>
             <h2 className="mt-4 text-base font-bold text-gray-900">Delete {activeRole.name}?</h2>
             <p className="mt-2 text-xs leading-5 text-gray-500">This role has {activeRole.userCount} assigned users. Deleting it cannot be undone.</p>

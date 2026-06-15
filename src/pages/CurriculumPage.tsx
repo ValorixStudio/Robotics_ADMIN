@@ -1,4 +1,4 @@
-ï»¿export default function CurriculumPage() {
+export default function CurriculumPage() {
   return (
     <>
       <h1 className="text-2xl font-bold tracking-tight text-gray-800">Curriculum Builder</h1>
@@ -7,8 +7,8 @@
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
           <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-gray-800">â‰¡Æ’Ã´Ã¯ Robotics 101 Î“Ã‡Ã¶ Modules</h3>
-            <button className="px-3 py-1.5 rounded-lg bg-[#006aa0] text-white text-xs font-semibold hover:bg-[#005a8a] transition-colors">+ Add Module</button>
+            <h3 className="text-sm font-bold text-gray-800">=ƒôï Robotics 101 GÇö Modules</h3>
+            <button className="px-3 py-1.5 rounded-lg bg-[#e51b72] text-white text-xs font-semibold hover:bg-[#bd145c] transition-colors">+ Add Module</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
@@ -28,7 +28,7 @@
                     <td className="p-3 font-semibold text-gray-800">{m.title}</td>
                     <td className="p-3 text-gray-500">{m.lessons}</td>
                     <td className="p-3"><span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${m.sc}`}>{m.status}</span></td>
-                    <td className="p-3 text-right"><button className="text-xs font-semibold text-[#006aa0] hover:underline">Edit</button></td>
+                    <td className="p-3 text-right"><button className="text-xs font-semibold text-[#e51b72] hover:underline">Edit</button></td>
                   </tr>
                 ))}
               </tbody>
@@ -37,7 +37,7 @@
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-800 mb-5">â‰¡Æ’Ã¹â•‘âˆ©â••Ã… Learning Path</h3>
+          <h3 className="text-sm font-bold text-gray-800 mb-5">=ƒù¦n+Å Learning Path</h3>
           {[
             { n:1, title:"Foundations",       sub:"Theory + Basics", status:"Done",        sc:"bg-green-100 text-green-700", dot:"bg-blue-500"   },
             { n:2, title:"Hands-on Projects", sub:"Build & Test",    status:"In Progress", sc:"bg-amber-100 text-amber-700", dot:"bg-orange-400" },

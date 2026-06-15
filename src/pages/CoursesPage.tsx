@@ -103,7 +103,7 @@ export default function CoursesPage() {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#006aa0] hover:bg-[#005a8a] text-white text-xs font-semibold transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#e51b72] hover:bg-[#bd145c] text-white text-xs font-semibold transition-colors"
         >
           + New Course
         </button>
@@ -175,7 +175,7 @@ export default function CoursesPage() {
                   {c.status === "Draft" ? (
                     <button
                       onClick={() => updateStatus(c.id, "Published")}
-                      className="text-xs font-semibold text-[#006aa0] hover:underline"
+                      className="text-xs font-semibold text-[#e51b72] hover:underline"
                     >
                       Publish
                     </button>
@@ -203,7 +203,7 @@ export default function CoursesPage() {
             className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-[#006aa0] px-5 py-4 text-white">
+            <div className="bg-[#e51b72] px-5 py-4 text-white">
               <h2 className="text-sm font-bold">Create New Learning Course</h2>
               <p className="text-[11px] text-white/70 mt-0.5">Initialize a module workspace for target students</p>
             </div>
@@ -233,7 +233,7 @@ export default function CoursesPage() {
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
                     placeholder="e.g. Advanced Embedded Systems"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-[#006aa0]"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-[#e51b72]"
                   />
                 </div>
               </div>
@@ -247,7 +247,7 @@ export default function CoursesPage() {
                     value={newInstructor}
                     onChange={(e) => setNewInstructor(e.target.value)}
                     placeholder="e.g. Prof. Malhotra"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-[#006aa0]"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-[#e51b72]"
                   />
                 </div>
                 <div>
@@ -258,7 +258,7 @@ export default function CoursesPage() {
                     max={50}
                     value={newModules}
                     onChange={(e) => setNewModules(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-[#006aa0]"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-[#e51b72]"
                   />
                 </div>
               </div>
@@ -272,7 +272,7 @@ export default function CoursesPage() {
                       name="status"
                       checked={newStatus === "Draft"}
                       onChange={() => setNewStatus("Draft")}
-                      className="accent-[#006aa0]"
+                      className="accent-[#e51b72]"
                     />
                     Save as Draft
                   </label>
@@ -282,7 +282,7 @@ export default function CoursesPage() {
                       name="status"
                       checked={newStatus === "Published"}
                       onChange={() => setNewStatus("Published")}
-                      className="accent-[#006aa0]"
+                      className="accent-[#e51b72]"
                     />
                     Publish Directly
                   </label>
@@ -299,7 +299,7 @@ export default function CoursesPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#006aa0] hover:bg-[#005a8a] text-white font-semibold transition-colors"
+                  className="px-4 py-2 rounded-xl bg-[#e51b72] hover:bg-[#bd145c] text-white font-semibold transition-colors"
                 >
                   Create Course
                 </button>
