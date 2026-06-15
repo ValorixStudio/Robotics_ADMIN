@@ -1,32 +1,28 @@
 import { Routes, Route } from "react-router-dom";
 import Sidebar from "@/components/Sidebar";
-import DashboardPage from "@/components/DashboardPage";
+import DashboardPage from "@/pages/DashboardPage";
 import ComponentsPage from "@/pages/ComponentsPage";
-import PlaceholderPage from "@/pages/PlaceholderPage";
+import AnalyticsPage from "@/pages/AnalyticsPage";
+import AssignmentsPage from "@/pages/AssignmentsPage";
+import ResourcesPage from "@/pages/ResourcesPage";
+import CoursesPage from "@/pages/CoursesPage";
+import CurriculumPage from "@/pages/CurriculumPage";
+import QuizzesPage from "@/pages/QuizzesPage";
+import LiveclassPage from "@/pages/LiveclassPage";
+import StudentsPage from "@/pages/StudentsPage";
+import TeachersPage from "@/pages/TeachersPage";
+import LearnerprofilePage from "@/pages/LearnerprofilePage";
+import AttendancePage from "@/pages/AttendancePage";
+import LeaderboardPage from "@/pages/LeaderboardPage";
+import AnnouncementsPage from "@/pages/AnnouncementsPage";
+import MessagesPage from "@/pages/MessagesPage";
+import CalendarPage from "@/pages/CalendarPage";
+import CircuitsPage from "@/pages/CircuitsPage";
+import ThreeDModelPage from "@/pages/ThreeDModelPage";
+import GradesPage from "@/pages/GradesPage";
+import CertificatesPage from "@/pages/CertificatesPage";
+import SettingsPage from "@/pages/SettingsPage";
 import PageNotFound from "@/pages/PageNotFound";
-
-const ROUTES = [
-  { path: "/analytics", label: "Analytics", description: "View key platform metrics and activity summaries." },
-  { path: "/courses", label: "Courses", description: "Manage and review your available courses." },
-  { path: "/curriculum", label: "Curriculum", description: "Organize your curriculum and learning tracks." },
-  { path: "/assignments", label: "Assignments", description: "Review and grade assignments." },
-  { path: "/quizzes", label: "Quizzes", description: "Create and manage quizzes." },
-  { path: "/liveclass", label: "Live Classes", description: "Plan and monitor live sessions." },
-  { path: "/resources", label: "Resources", description: "Upload and share learning resources." },
-  { path: "/students", label: "Students", description: "View student rosters and performance." },
-  { path: "/teachers", label: "Teachers", description: "Manage teacher accounts and schedules." },
-  { path: "/learnerprofile", label: "Learner Profile", description: "Inspect individual learner progress." },
-  { path: "/attendance", label: "Attendance", description: "Track attendance and participation." },
-  { path: "/leaderboard", label: "Leaderboard", description: "See top performers across the platform." },
-  { path: "/announcements", label: "Announcements", description: "Send platform-wide announcements." },
-  { path: "/messages", label: "Messages", description: "Handle inbox messages and notifications." },
-  { path: "/calendar", label: "Calendar", description: "View the course and event calendar." },
-  { path: "/circuits", label: "Circuits", description: "Browse the circuits component library." },
-  { path: "/3d_model", label: "3D Models", description: "Access the 3D model library and viewer." },
-  { path: "/grades", label: "Grades & Reports", description: "Open grade reports and analytics." },
-  { path: "/certificates", label: "Certificates", description: "Issue certificates and credential badges." },
-  { path: "/settings", label: "Settings", description: "Configure dashboard and account settings." },
-];
 
 function App() {
   return (
@@ -59,14 +55,27 @@ function App() {
         <main className="pt-[86px] p-7 flex-1 flex flex-col gap-6">
           <Routes>
             <Route path="/" element={<DashboardPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/components" element={<ComponentsPage />} />
-            {ROUTES.map(route => (
-              <Route
-                key={route.path}
-                path={route.path}
-                element={<PlaceholderPage title={route.label} description={route.description} />}
-              />
-            ))}
+            <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/curriculum" element={<CurriculumPage />} />
+            <Route path="/assignments" element={<AssignmentsPage />} />
+            <Route path="/quizzes" element={<QuizzesPage />} />
+            <Route path="/liveclass" element={<LiveclassPage />} />
+            <Route path="/resources" element={<ResourcesPage />} />
+            <Route path="/students" element={<StudentsPage />} />
+            <Route path="/teachers" element={<TeachersPage />} />
+            <Route path="/learnerprofile" element={<LearnerprofilePage />} />
+            <Route path="/attendance" element={<AttendancePage />} />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/announcements" element={<AnnouncementsPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/circuits" element={<CircuitsPage />} />
+            <Route path="/3d_model" element={<ThreeDModelPage />} />
+            <Route path="/grades" element={<GradesPage />} />
+            <Route path="/certificates" element={<CertificatesPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<PageNotFound />} />
           </Routes>
         </main>
