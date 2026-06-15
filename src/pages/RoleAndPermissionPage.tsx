@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import { useMemo, useState } from "react";
+
+type PermissionCategory = "Academic" | "People" | "Communication" | "Administration";
 
 interface Permission {
   id: string;
   name: string;
   description: string;
-  category: "Academic" | "People" | "Communication" | "Admin" | "System";
+  category: PermissionCategory;
 }
 
 interface Role {
@@ -14,302 +16,410 @@ interface Role {
   color: string;
   permissions: string[];
   userCount: number;
+  protected?: boolean;
 }
 
-const AVAILABLE_PERMISSIONS: Permission[] = [
-  { id: "view_courses", name: "View Courses", description: "View all courses", category: "Academic" },
-  { id: "create_courses", name: "Create Courses", description: "Create new courses", category: "Academic" },
-  { id: "edit_courses", name: "Edit Courses", description: "Edit course content", category: "Academic" },
-  { id: "delete_courses", name: "Delete Courses", description: "Delete courses", category: "Academic" },
-  { id: "view_students", name: "View Students", description: "View student information", category: "People" },
-  { id: "manage_students", name: "Manage Students", description: "Add/edit/delete students", category: "People" },
-  { id: "view_teachers", name: "View Teachers", description: "View teacher information", category: "People" },
-  { id: "manage_teachers", name: "Manage Teachers", description: "Add/edit/delete teachers", category: "People" },
-  { id: "view_attendance", name: "View Attendance", description: "View attendance records", category: "People" },
-  { id: "mark_attendance", name: "Mark Attendance", description: "Mark attendance", category: "People" },
-  { id: "view_grades", name: "View Grades", description: "View grade information", category: "Academic" },
-  { id: "grade_assignments", name: "Grade Assignments", description: "Grade student assignments", category: "Academic" },
-  { id: "send_messages", name: "Send Messages", description: "Send messages to students", category: "Communication" },
-  { id: "view_announcements", name: "View Announcements", description: "View announcements", category: "Communication" },
-  { id: "create_announcements", name: "Create Announcements", description: "Create announcements", category: "Communication" },
-  { id: "manage_roles", name: "Manage Roles", description: "Create and edit roles", category: "Admin" },
-  { id: "manage_permissions", name: "Manage Permissions", description: "Assign permissions", category: "Admin" },
-  { id: "view_system_logs", name: "View System Logs", description: "View system logs", category: "System" },
+const PERMISSIONS: Permission[] = [
+  { id: "view_courses", name: "View courses", description: "Browse courses and learning modules", category: "Academic" },
+  { id: "create_courses", name: "Create courses", description: "Create new courses and modules", category: "Academic" },
+  { id: "edit_courses", name: "Edit courses", description: "Update course content and settings", category: "Academic" },
+  { id: "delete_courses", name: "Delete courses", description: "Remove courses from the platform", category: "Academic" },
+  { id: "grade_assignments", name: "Grade assignments", description: "Review and score student submissions", category: "Academic" },
+  { id: "view_students", name: "View students", description: "Access student profiles and progress", category: "People" },
+  { id: "manage_students", name: "Manage students", description: "Add, edit, and deactivate students", category: "People" },
+  { id: "view_teachers", name: "View teachers", description: "Access teacher profiles", category: "People" },
+  { id: "manage_teachers", name: "Manage teachers", description: "Add, edit, and deactivate teachers", category: "People" },
+  { id: "manage_attendance", name: "Manage attendance", description: "View and update attendance records", category: "People" },
+  { id: "send_messages", name: "Send messages", description: "Message students and teachers", category: "Communication" },
+  { id: "manage_announcements", name: "Manage announcements", description: "Create and publish announcements", category: "Communication" },
+  { id: "manage_roles", name: "Manage roles", description: "Create, edit, and remove custom roles", category: "Administration" },
+  { id: "manage_permissions", name: "Manage permissions", description: "Change access for each role", category: "Administration" },
+  { id: "view_reports", name: "View reports", description: "Access analytics and system reports", category: "Administration" },
+  { id: "manage_settings", name: "Manage settings", description: "Change organization-wide settings", category: "Administration" },
 ];
 
+const INITIAL_ROLES: Role[] = [
+  {
+    id: "super-admin",
+    name: "Super Admin",
+    description: "Complete access to every workspace and setting.",
+    color: "bg-violet-500",
+    permissions: PERMISSIONS.map((permission) => permission.id),
+    userCount: 2,
+    protected: true,
+  },
+  {
+    id: "teacher",
+    name: "Teacher",
+    description: "Manage classes, learners, and academic content.",
+    color: "bg-emerald-500",
+    permissions: [
+      "view_courses", "create_courses", "edit_courses", "grade_assignments", "view_students",
+      "manage_students", "manage_attendance", "send_messages", "manage_announcements", "view_reports",
+    ],
+    userCount: 12,
+  },
+  {
+    id: "student",
+    name: "Student",
+    description: "Access assigned learning content and communication.",
+    color: "bg-blue-500",
+    permissions: ["view_courses", "send_messages"],
+    userCount: 126,
+  },
+  {
+    id: "content-manager",
+    name: "Content Manager",
+    description: "Build and maintain curriculum content.",
+    color: "bg-amber-500",
+    permissions: ["view_courses", "create_courses", "edit_courses", "delete_courses", "manage_announcements"],
+    userCount: 4,
+  },
+];
+
+const CATEGORIES: PermissionCategory[] = ["Academic", "People", "Communication", "Administration"];
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M12 3 5 6v5c0 4.6 2.8 8.1 7 10 4.2-1.9 7-5.4 7-10V6l-7-3Z" />
+      <path d="m9.5 12 1.7 1.7 3.6-3.8" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ collapsed }: { collapsed: boolean }) {
+  return (
+    <svg viewBox="0 0 20 20" className={`h-4 w-4 transition-transform ${collapsed ? "-rotate-90" : "rotate-0"}`} fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="m5 7.5 5 5 5-5" />
+    </svg>
+  );
+}
+
 export default function RoleAndPermissionPage() {
-  const [roles, setRoles] = useState<Role[]>([
-    {
-      id: "student",
-      name: "Student",
-      description: "Basic student access",
-      color: "bg-blue-500",
-      permissions: ["view_courses", "view_grades", "send_messages", "view_announcements"],
-      userCount: 126,
-    },
-    {
-      id: "teacher",
-      name: "Teacher",
-      description: "Teacher access with grading",
-      color: "bg-green-500",
-      permissions: ["view_courses", "edit_courses", "view_students", "view_attendance", "mark_attendance", "grade_assignments", "send_messages", "create_announcements"],
-      userCount: 12,
-    },
-    {
-      id: "admin",
-      name: "Super Admin",
-      description: "Full system access",
-      color: "bg-purple-500",
-      permissions: AVAILABLE_PERMISSIONS.map(p => p.id),
-      userCount: 2,
-    },
-  ]);
+  const [roles, setRoles] = useState<Role[]>(INITIAL_ROLES);
+  const [activeRoleId, setActiveRoleId] = useState(INITIAL_ROLES[0].id);
+  const [search, setSearch] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [roleName, setRoleName] = useState("");
+  const [roleDescription, setRoleDescription] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [collapsedCategories, setCollapsedCategories] = useState<PermissionCategory[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [roleNameError, setRoleNameError] = useState("");
 
-  const [showRoleModal, setShowRoleModal] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [editMode, setEditMode] = useState(false);
-  const [newRoleName, setNewRoleName] = useState("");
-  const [newRoleDesc, setNewRoleDesc] = useState("");
-  const [newRoleColor, setNewRoleColor] = useState("bg-indigo-500");
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const activeRole = roles.find((role) => role.id === activeRoleId) ?? roles[0];
+  const filteredPermissions = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return query
+      ? PERMISSIONS.filter((permission) => `${permission.name} ${permission.description}`.toLowerCase().includes(query))
+      : PERMISSIONS;
+  }, [search]);
 
-  const colors = [
-    "bg-blue-500", "bg-green-500", "bg-purple-500", "bg-red-500",
-    "bg-yellow-500", "bg-pink-500", "bg-indigo-500", "bg-cyan-500",
-  ];
-
-  const openNewRoleModal = () => {
-    setEditMode(false);
-    setNewRoleName("");
-    setNewRoleDesc("");
-    setSelectedPermissions([]);
-    setNewRoleColor("bg-indigo-500");
-    setShowRoleModal(true);
+  const updateActiveRole = (updater: (role: Role) => Role) => {
+    setRoles((current) => current.map((role) => (role.id === activeRole.id ? updater(role) : role)));
+    setSaved(false);
   };
 
-  const openEditModal = (role: Role) => {
-    setEditMode(true);
-    setSelectedRole(role);
-    setNewRoleName(role.name);
-    setNewRoleDesc(role.description);
-    setSelectedPermissions(role.permissions);
-    setNewRoleColor(role.color);
-    setShowRoleModal(true);
+  const togglePermission = (permissionId: string) => {
+    updateActiveRole((role) => ({
+      ...role,
+      permissions: role.permissions.includes(permissionId)
+        ? role.permissions.filter((id) => id !== permissionId)
+        : [...role.permissions, permissionId],
+    }));
   };
 
-  const saveRole = () => {
-    if (!newRoleName.trim()) return;
-
-    if (editMode && selectedRole) {
-      setRoles(roles.map(r =>
-        r.id === selectedRole.id
-          ? {
-              ...r,
-              name: newRoleName,
-              description: newRoleDesc,
-              color: newRoleColor,
-              permissions: selectedPermissions,
-            }
-          : r
-      ));
-    } else {
-      const newRole: Role = {
-        id: Date.now().toString(),
-        name: newRoleName,
-        description: newRoleDesc,
-        color: newRoleColor,
-        permissions: selectedPermissions,
-        userCount: 0,
-      };
-      setRoles([...roles, newRole]);
-    }
-
-    setShowRoleModal(false);
+  const toggleCategory = (category: PermissionCategory) => {
+    const categoryIds = PERMISSIONS.filter((permission) => permission.category === category).map((permission) => permission.id);
+    const hasEveryPermission = categoryIds.every((id) => activeRole.permissions.includes(id));
+    updateActiveRole((role) => ({
+      ...role,
+      permissions: hasEveryPermission
+        ? role.permissions.filter((id) => !categoryIds.includes(id))
+        : Array.from(new Set([...role.permissions, ...categoryIds])),
+    }));
   };
 
-  const deleteRole = (id: string) => {
-    if (roles.length > 1) {
-      setRoles(roles.filter(r => r.id !== id));
-    }
-  };
-
-  const togglePermission = (permId: string) => {
-    setSelectedPermissions(prev =>
-      prev.includes(permId) ? prev.filter(p => p !== permId) : [...prev, permId]
+  const toggleCategoryBlock = (category: PermissionCategory) => {
+    setCollapsedCategories((current) =>
+      current.includes(category) ? current.filter((item) => item !== category) : [...current, category]
     );
   };
 
-  const permissionsByCategory = (category: string) => {
-    return AVAILABLE_PERMISSIONS.filter(p => p.category === category);
+  const allBlocksHidden = CATEGORIES.every((category) => collapsedCategories.includes(category));
+
+  const toggleAllBlocks = () => {
+    setCollapsedCategories(allBlocksHidden ? [] : [...CATEGORIES]);
   };
 
-  const getPermissionCount = (role: Role) => role.permissions.length;
+  const addRole = (event: React.FormEvent) => {
+    event.preventDefault();
+    const name = roleName.trim();
+    if (!name) {
+      setRoleNameError("Please enter a role name.");
+      return;
+    }
+    if (roles.some((role) => role.name.toLowerCase() === name.toLowerCase())) {
+      setRoleNameError("A role with this name already exists.");
+      return;
+    }
+
+    const id = `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`;
+    const newRole: Role = {
+      id,
+      name,
+      description: roleDescription.trim() || "Custom access role.",
+      color: "bg-blue-500",
+      permissions: [],
+      userCount: 0,
+    };
+    setRoles((current) => [...current, newRole]);
+    setActiveRoleId(id);
+    setRoleName("");
+    setRoleDescription("");
+    setRoleNameError("");
+    setShowModal(false);
+  };
+
+  const deleteActiveRole = () => {
+    if (activeRole.protected) return;
+    const remainingRoles = roles.filter((role) => role.id !== activeRole.id);
+    setRoles(remainingRoles);
+    setActiveRoleId(remainingRoles[0].id);
+    setShowDeleteConfirm(false);
+  };
+
+  const permissionProgress = Math.round((activeRole.permissions.length / PERMISSIONS.length) * 100);
 
   return (
     <>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-800">Roles & Permissions</h1>
-          <p className="text-sm text-gray-500 -mt-1">Manage roles and assign permissions to users</p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Roles & Permissions</h1>
         </div>
-        <button
-          onClick={openNewRoleModal}
-          className="px-4 py-2 rounded-xl bg-[#006aa0] hover:bg-[#005a8a] text-white text-xs font-semibold transition-colors"
-        >
-          + Create Role
-        </button>
+
       </div>
 
-      {/* Roles Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {roles.map(role => (
-          <div key={role.id} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-            <div className={`h-2 ${role.color}`} />
-            <div className="p-5">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-bold text-gray-800 text-sm">{role.name}</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">{role.description}</p>
-                </div>
-                <div className="flex gap-1">
+      <div className="grid min-h-[650px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm lg:h-[calc(100vh-190px)] lg:grid-cols-[290px_minmax(0,1fr)]">
+        <aside className="flex flex-col border-b border-gray-200 bg-gray-50/70 lg:border-b-0 lg:border-r">
+          <div className="border-b border-gray-200 p-4">
+            <button
+              onClick={() => { setRoleNameError(""); setShowModal(true); }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#006aa0] px-4 py-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#005a8a]"
+            >
+              <span className="text-base leading-none">+</span> Add new role
+            </button>
+          </div>
+
+          <div className="flex-1 p-3">
+            <div className="flex items-center justify-between px-2 py-2">
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400">Role list</span>
+              <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">{roles.length}</span>
+            </div>
+            <div className="space-y-1.5">
+              {roles.map((role) => {
+                const isActive = role.id === activeRole.id;
+                return (
                   <button
-                    onClick={() => openEditModal(role)}
-                    className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center text-xs transition-colors"
+                    key={role.id}
+                    onClick={() => { setActiveRoleId(role.id); setSaved(false); }}
+                    className={`w-full rounded-xl border p-3 text-left transition-all ${
+                      isActive
+                        ? "border-blue-200 bg-white shadow-sm ring-1 ring-blue-100"
+                        : "border-transparent hover:border-gray-200 hover:bg-white"
+                    }`}
                   >
-                    ✏️
+                    <div className="flex items-center gap-3">
+                      <span className={`h-9 w-1 rounded-full ${role.color}`} />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2 font-bold text-gray-800">
+                          <span className="truncate text-sm">{role.name}</span>
+                          {role.protected && <span className="rounded bg-violet-50 px-1.5 py-0.5 text-[9px] uppercase text-violet-600">Core</span>}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] text-gray-400">
+                          {role.userCount} users - {role.permissions.length} permissions
+                        </span>
+                      </span>
+                      <span className={`text-lg ${isActive ? "text-[#006aa0]" : "text-gray-300"}`}>›</span>
+                    </div>
                   </button>
-                  {roles.length > 1 && (
-                    <button
-                      onClick={() => deleteRole(role.id)}
-                      className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center text-xs transition-colors"
-                    >
-                      🗑️
-                    </button>
-                  )}
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+
+        <section className="flex min-w-0 flex-col lg:min-h-0">
+          <div className="border-b border-gray-200 px-5 py-5 sm:px-7">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className={`flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-sm ${activeRole.color}`}>
+                  <ShieldIcon />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-lg font-bold text-gray-900">{activeRole.name}</h2>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">{activeRole.userCount} assigned</span>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">{activeRole.description}</p>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <div className="flex items-center gap-4 text-xs">
-                  <div>
-                    <div className="text-gray-400 font-medium">Permissions</div>
-                    <div className="font-bold text-gray-800">{getPermissionCount(role)}</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-400 font-medium">Users</div>
-                    <div className="font-bold text-gray-800">{role.userCount}</div>
-                  </div>
-                </div>
+              <div className="flex items-center gap-2">
+                {!activeRole.protected && (
+                  <button onClick={() => setShowDeleteConfirm(true)} className="rounded-xl border border-red-100 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50">
+                    Delete role
+                  </button>
+                )}
                 <button
-                  onClick={() => openEditModal(role)}
-                  className="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition-colors"
+                  onClick={() => { setSaved(true); window.setTimeout(() => setSaved(false), 1800); }}
+                  className="rounded-xl bg-[#006aa0] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#005a8a]"
                 >
-                  Manage
+                  {saved ? "Permissions saved" : "Save changes"}
                 </button>
               </div>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Role Modal */}
-      {showRoleModal && (
-        <div className="fixed inset-0 z-[200] bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="bg-[#006aa0] px-6 py-4 text-white">
-              <h2 className="text-sm font-bold">{editMode ? "Edit Role" : "Create New Role"}</h2>
-              <p className="text-[11px] text-white/70 mt-0.5">Define role details and assign permissions</p>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 space-y-5">
-              {/* Role Details */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-2">Role Name *</label>
-                  <input
-                    type="text"
-                    value={newRoleName}
-                    onChange={(e) => setNewRoleName(e.target.value)}
-                    placeholder="e.g. Content Creator"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-[#006aa0] text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-2">Description</label>
-                  <input
-                    type="text"
-                    value={newRoleDesc}
-                    onChange={(e) => setNewRoleDesc(e.target.value)}
-                    placeholder="Role description..."
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-[#006aa0] text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-2">Role Color</label>
-                  <div className="flex gap-2 flex-wrap">
-                    {colors.map(c => (
-                      <button
-                        key={c}
-                        onClick={() => setNewRoleColor(c)}
-                        className={`w-8 h-8 rounded-lg ${c} ${newRoleColor === c ? "ring-2 ring-offset-2 ring-gray-400" : ""} transition-all`}
-                      />
-                    ))}
-                  </div>
+          <div className="p-5 sm:p-7 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-bold text-gray-800">Permission access</h3>
+                <p className="mt-1 text-xs text-gray-500"><span className="font-bold text-[#006aa0]">{activeRole.permissions.length} of {PERMISSIONS.length}</span> permissions enabled</p>
+                <div className="mt-2 h-1.5 w-48 overflow-hidden rounded-full bg-gray-100">
+                  <div className="h-full rounded-full bg-[#006aa0] transition-all" style={{ width: `${permissionProgress}%` }} />
                 </div>
               </div>
+              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                <button
+                  onClick={toggleAllBlocks}
+                  className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-bold text-gray-600 transition-colors hover:border-blue-200 hover:text-[#006aa0]"
+                >
+                  {allBlocksHidden ? "Expand all" : "Collapse all"}
+                </button>
+                <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-gray-400 focus-within:border-[#006aa0] sm:w-64 sm:flex-none">
+                  <SearchIcon />
+                  <input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search permissions"
+                    className="w-full bg-transparent text-xs text-gray-700 outline-none placeholder:text-gray-400"
+                  />
+                  {search && <button type="button" onClick={() => setSearch("")} className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" aria-label="Clear permission search">x</button>}
+                </label>
+              </div>
+            </div>
 
-              {/* Permissions */}
-              <div className="border-t pt-5">
-                <h3 className="text-xs font-bold text-gray-800 mb-3">Permissions by Category</h3>
-                <div className="space-y-2">
-                  {["Academic", "People", "Communication", "Admin", "System"].map(category => (
-                    <div key={category}>
+            <div className="grid gap-4 xl:grid-cols-2">
+              {CATEGORIES.map((category) => {
+                const allCategoryPermissions = PERMISSIONS.filter((permission) => permission.category === category);
+                const visiblePermissions = filteredPermissions.filter((permission) => permission.category === category);
+                if (visiblePermissions.length === 0) return null;
+                const selectedCount = allCategoryPermissions.filter((permission) => activeRole.permissions.includes(permission.id)).length;
+                const allSelected = selectedCount === allCategoryPermissions.length;
+                const isCollapsed = collapsedCategories.includes(category);
+
+                return (
+                  <div key={category} className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                    <div className={`flex items-center justify-between bg-gray-50/80 px-4 py-3 ${isCollapsed ? "" : "border-b border-gray-100"}`}>
                       <button
-                        onClick={() => setExpandedCategory(expandedCategory === category ? null : category)}
-                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-50 text-left font-semibold text-xs text-gray-700"
+                        onClick={() => toggleCategoryBlock(category)}
+                        aria-expanded={!isCollapsed}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       >
-                        <span>{category}</span>
-                        <span>{expandedCategory === category ? "▼" : "▶"}</span>
+                        <span className="text-gray-400"><ChevronIcon collapsed={isCollapsed} /></span>
+                        <span>
+                          <span className="block text-xs font-bold text-gray-800">{category}</span>
+                          <span className="mt-0.5 block text-[10px] text-gray-400">{selectedCount} of {allCategoryPermissions.length} selected</span>
+                        </span>
                       </button>
-                      {expandedCategory === category && (
-                        <div className="pl-4 space-y-2 py-2">
-                          {permissionsByCategory(category).map(perm => (
-                            <label key={perm.id} className="flex items-center gap-2 cursor-pointer">
+                      <button onClick={() => toggleCategory(category)} className="ml-3 text-[11px] font-bold text-[#006aa0] hover:underline">
+                        {allSelected ? "Clear all" : "Select all"}
+                      </button>
+                    </div>
+                    {!isCollapsed && (
+                      <div className="divide-y divide-gray-100">
+                        {visiblePermissions.map((permission) => {
+                          const enabled = activeRole.permissions.includes(permission.id);
+                          return (
+                            <label key={permission.id} className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-blue-50/30">
                               <input
                                 type="checkbox"
-                                checked={selectedPermissions.includes(perm.id)}
-                                onChange={() => togglePermission(perm.id)}
-                                className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                checked={enabled}
+                                onChange={() => togglePermission(permission.id)}
+                                className="sr-only"
                               />
-                              <span className="text-xs text-gray-700 font-medium">{perm.name}</span>
-                              <span className="text-[10px] text-gray-400">({perm.description})</span>
+                              <span className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${enabled ? "bg-[#006aa0]" : "bg-gray-200"}`}>
+                                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${enabled ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-xs font-semibold text-gray-700">{permission.name}</span>
+                                <span className="mt-0.5 block text-[10px] leading-4 text-gray-400">{permission.description}</span>
+                              </span>
                             </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Modal Actions */}
-            <div className="border-t bg-gray-50 px-6 py-4 flex justify-end gap-3">
-              <button
-                onClick={() => setShowRoleModal(false)}
-                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 font-semibold text-xs hover:bg-gray-100 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveRole}
-                className="px-4 py-2 rounded-lg bg-[#006aa0] hover:bg-[#005a8a] text-white font-semibold text-xs transition-colors"
-              >
-                {editMode ? "Update Role" : "Create Role"}
-              </button>
+            {filteredPermissions.length === 0 && (
+              <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center">
+                <p className="text-sm font-semibold text-gray-600">No permissions found</p>
+                <p className="mt-1 text-xs text-gray-400">Try a different search term.</p>
+                <button onClick={() => setSearch("")} className="mt-3 text-xs font-bold text-[#006aa0] hover:underline">Clear search</button>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-gray-950/45 p-4" onMouseDown={() => setShowModal(false)}>
+          <form onSubmit={addRole} onMouseDown={(event) => event.stopPropagation()} className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="bg-[#006aa0] px-6 py-5 text-white">
+              <h2 className="text-base font-bold">Add new role</h2>
+              <p className="mt-1 text-xs text-white/70">Create the role first, then configure its permissions.</p>
+            </div>
+            <div className="space-y-4 p-6">
+              <label className="block">
+                <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-gray-500">Role name</span>
+                <input autoFocus value={roleName} onChange={(event) => { setRoleName(event.target.value); setRoleNameError(""); }} placeholder="e.g. Lab Coordinator" className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[#006aa0] ${roleNameError ? "border-red-300 bg-red-50/40" : "border-gray-200"}`} />
+                {roleNameError && <span className="mt-1.5 block text-[11px] font-medium text-red-600">{roleNameError}</span>}
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-gray-500">Description</span>
+                <textarea value={roleDescription} onChange={(event) => setRoleDescription(event.target.value)} placeholder="What can this role do?" rows={3} className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-[#006aa0]" />
+              </label>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50 px-6 py-4">
+              <button type="button" onClick={() => setShowModal(false)} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-white">Cancel</button>
+              <button type="submit" className="rounded-xl bg-[#006aa0] px-4 py-2 text-xs font-bold text-white hover:bg-[#005a8a]">Create role</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[210] flex items-center justify-center bg-gray-950/45 p-4" onMouseDown={() => setShowDeleteConfirm(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-xl font-bold text-red-600">!</div>
+            <h2 className="mt-4 text-base font-bold text-gray-900">Delete {activeRole.name}?</h2>
+            <p className="mt-2 text-xs leading-5 text-gray-500">This role has {activeRole.userCount} assigned users. Deleting it cannot be undone.</p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button onClick={() => setShowDeleteConfirm(false)} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50">Keep role</button>
+              <button onClick={deleteActiveRole} className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700">Delete role</button>
             </div>
           </div>
         </div>
