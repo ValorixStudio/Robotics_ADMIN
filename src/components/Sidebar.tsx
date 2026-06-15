@@ -57,6 +57,7 @@ const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
     items: [
       { id: "grades",       label: "Grades & Reports", icon: "🎯", href: "/grades"       },
       { id: "certificates", label: "Certificates",     icon: "🏅", href: "/certificates" },
+      { id: "roles",        label: "Roles & Permissions", icon: "🔐", href: "/roles-permissions" },
       { id: "settings",     label: "Settings",         icon: "⚙️", href: "/settings"     },
     ],
   },

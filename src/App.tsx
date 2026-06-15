@@ -22,6 +22,7 @@ import ThreeDModelPage from "@/pages/ThreeDModelPage";
 import GradesPage from "@/pages/GradesPage";
 import CertificatesPage from "@/pages/CertificatesPage";
 import SettingsPage from "@/pages/SettingsPage";
+import RoleAndPermissionPage from "@/pages/RoleAndPermissionPage";
 import PageNotFound from "@/pages/PageNotFound";
 
 function App() {
@@ -76,6 +77,7 @@ function App() {
             <Route path="/grades" element={<GradesPage />} />
             <Route path="/certificates" element={<CertificatesPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/roles-permissions" element={<RoleAndPermissionPage />} />
             <Route path="*" element={<PageNotFound />} />
           </Routes>
         </main>
