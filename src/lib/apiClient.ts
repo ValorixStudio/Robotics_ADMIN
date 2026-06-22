@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_BASE_URL } from "@/config/apiUrls";
+import { API_BASE_URL, API_KEY } from "@/config/apiUrls";
 import { authToken } from "@/lib/authToken";
 
 const apiClient = axios.create({
@@ -14,6 +14,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use((config) => {
   const token = authToken.get();
 
+  if (API_KEY) config.headers["x-api-key"] = API_KEY;
   if (token) config.headers.Authorization = `Bearer ${token}`;
 
   return config;

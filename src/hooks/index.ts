@@ -1,1 +1,1 @@
-export { useGet } from "@/hooks/useGet";
+export { useApi } from "@/hooks/useApi";

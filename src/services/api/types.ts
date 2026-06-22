@@ -111,11 +111,21 @@ export interface CreateComponentGuideRequest {
   sections: GuideSection[];
 }
 
+export type UpdateComponentGuideRequest = CreateComponentGuideRequest;
+
 export interface ComponentGuide extends CreateComponentGuideRequest {
+  id: string;
+  _id?: string;
+}
+
+export type CreateCircuitRequest = CreateComponentGuideRequest;
+
+export interface Circuit extends CreateCircuitRequest {
   id: string;
 }
 
 export interface MediaUploadResponse {
   url: string;
   filename?: string;
+  type?: GuideMediaType;
 }
