@@ -63,6 +63,55 @@ export interface Course extends CreateCourseRequest {
   updatedAt?: string;
 }
 
+export type CurriculumModuleStatus = "Draft" | "Live";
+
+export interface CreateCurriculumModuleRequest {
+  week: number;
+  class?: string;
+  engineeringLevel?: string;
+  description: string;
+  theoryTopics: string[];
+  practicalActivities: string[];
+  status?: CurriculumModuleStatus;
+  courseId?: string | null;
+}
+
+export type UpdateCurriculumModuleRequest = Partial<CreateCurriculumModuleRequest>;
+
+export interface CurriculumModule extends CreateCurriculumModuleRequest {
+  id: string;
+  status: CurriculumModuleStatus;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface StudentQuizStats {
+  solved: number;
+  total: number;
+  correct: number;
+  totalQuestions: number;
+  averageTimeSeconds: number;
+}
+
+export interface Student {
+  id: string;
+  name: string;
+  email?: string;
+  grade: number | string;
+  courses: number;
+  attendance?: string;
+  status: "Active" | "Inactive";
+  quizStats: StudentQuizStats;
+}
+
+export interface CreateStudentRequest {
+  name: string;
+  email?: string;
+  grade: number | string;
+  courses?: number;
+  status?: "Active" | "Inactive";
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   page: number;

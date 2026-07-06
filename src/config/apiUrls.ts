@@ -50,10 +50,22 @@ export const API_URLS = {
     create: "/component-guides",
     byId: (guideId: ResourceId) => `/component-guides/${guideId}`,
     uploadMedia: "/component-guides/media/upload",
-    mediaList: "/component-guides/media",
+    mediaList: "/media",
     deleteMedia: "/component-guides/media/delete-multiple-image",
   },
   circuits: {
     create: "/circuits",
   },
+  students: {
+    list: "/students",
+    create: "/students",
+    byId: (studentId: ResourceId) => `/students/${studentId}`,
+  },
+  curriculumModules: {
+    list: "/curriculum-modules",
+    create: "/curriculum-modules",
+    byId: (moduleId: ResourceId) => `/curriculum-modules/${moduleId}`,
+  },
 } as const;
+
+export const tutorialListApi = `${API_BASE_URL}/tutorial`;

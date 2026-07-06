@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
 import { API_BASE_URL } from "@/config/apiUrls";
+import { useGetter } from "@/hooks/getter";
 import type { GuideMediaType, MediaUploadResponse } from "@/services/api/types";
 
 type PickerStatus = "idle" | "saving" | "error";
 
-const MEDIA_LIBRARY_STORAGE_KEY = "admin-media-url-library";
+interface MediaItem {
+  id: string | number;
+  type: GuideMediaType;
+  url: string;
+  absoluteUrl?: string;
+  createdAt?: string;
+}
 
 interface MediaUrlPickerProps {
   value?: string;
@@ -86,25 +93,6 @@ function TrashIcon() {
   );
 }
 
-function readStoredMediaUrls(): string[] {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const storedValue = window.localStorage.getItem(MEDIA_LIBRARY_STORAGE_KEY);
-    const parsedValue = storedValue ? JSON.parse(storedValue) : [];
-    return Array.isArray(parsedValue)
-      ? parsedValue.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
-      : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeStoredMediaUrls(urls: string[]) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(MEDIA_LIBRARY_STORAGE_KEY, JSON.stringify(urls));
-}
-
 export function MediaUrlPicker({
   value,
   label = "Media URL",
@@ -115,14 +103,18 @@ export function MediaUrlPicker({
   onChange,
   onUploaded,
 }: MediaUrlPickerProps) {
+  const { callGetter } = useGetter();
+
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [uploadedPreviewUrl, setUploadedPreviewUrl] = useState("");
-  const [storedMediaUrls, setStoredMediaUrls] = useState<string[]>([]);
+  const [mediaLibrary, setMediaLibrary] = useState<MediaItem[]>([]);
   const [selectedMediaUrls, setSelectedMediaUrls] = useState<string[]>([]);
   const [status, setStatus] = useState<PickerStatus>("idle");
   const [message, setMessage] = useState("");
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [libraryError, setLibraryError] = useState("");
 
   useEffect(() => {
     if (!selectedFile) {
@@ -136,6 +128,27 @@ export function MediaUrlPicker({
     return () => URL.revokeObjectURL(objectUrl);
   }, [selectedFile]);
 
+  const fetchMediaLibrary = async () => {
+    try {
+      setLibraryLoading(true);
+      setLibraryError("");
+
+      const response = await callGetter({
+        url: `${API_BASE_URL.replace(/\/$/, "")}/media`,
+      });
+
+      const items: MediaItem[] = Array.isArray(response?.data)
+        ? response.data.filter((item: MediaItem) => !mediaType || item.type === mediaType)
+        : [];
+
+      setMediaLibrary(items);
+    } catch {
+      setLibraryError("Couldn't load saved media.");
+    } finally {
+      setLibraryLoading(false);
+    }
+  };
+
   const resetModal = () => {
     setSelectedFile(null);
     setUploadedPreviewUrl("");
@@ -146,24 +159,13 @@ export function MediaUrlPicker({
 
   const openModal = () => {
     resetModal();
-    setStoredMediaUrls(readStoredMediaUrls());
+    void fetchMediaLibrary();
     setIsOpen(true);
   };
 
   const closeModal = () => {
     setIsOpen(false);
     resetModal();
-  };
-
-  const rememberMediaUrl = (url: unknown) => {
-    const normalizedUrl = toSafeString(url).trim();
-    if (!normalizedUrl) return;
-
-    setStoredMediaUrls((currentUrls) => {
-      const nextUrls = [normalizedUrl, ...currentUrls.filter((item) => item !== normalizedUrl)];
-      writeStoredMediaUrls(nextUrls);
-      return nextUrls;
-    });
   };
 
   const toggleSelectedMedia = (url: string) => {
@@ -177,27 +179,13 @@ export function MediaUrlPicker({
     );
   };
 
-  const deleteStoredMedia = (url: string) => {
-    const normalizedUrl = toSafeString(url).trim();
-    if (!normalizedUrl) return;
-
-    setStoredMediaUrls((currentUrls) => {
-      const nextUrls = currentUrls.filter((item) => item !== normalizedUrl);
-      writeStoredMediaUrls(nextUrls);
-      return nextUrls;
-    });
-    setSelectedMediaUrls((currentUrls) => currentUrls.filter((item) => item !== normalizedUrl));
-
-    if (uploadedPreviewUrl === normalizedUrl) {
-      setUploadedPreviewUrl("");
-    }
-  };
-
   const doneSelecting = () => {
     const latestUrl = selectedMediaUrls.at(-1);
 
     if (latestUrl) {
-      onChange(latestUrl, inferMediaType(latestUrl, mediaType));
+      const matchedItem = mediaLibrary.find((item) => item.url === latestUrl);
+      const resolvedType = matchedItem?.type ?? inferMediaType(latestUrl, mediaType);
+      onChange(latestUrl, resolvedType);
       onUploaded?.(latestUrl);
     }
     closeModal();
@@ -220,10 +208,14 @@ export function MediaUrlPicker({
         throw new Error("Upload completed, but the server did not return a media URL.");
       }
 
-      rememberMediaUrl(normalizedUrl);
       setUploadedPreviewUrl(normalizedUrl);
       setSelectedMediaUrls((currentUrls) =>
         currentUrls.includes(normalizedUrl) ? currentUrls : [...currentUrls, normalizedUrl],
+      );
+      setMediaLibrary((currentItems) =>
+        currentItems.some((item) => item.url === normalizedUrl)
+          ? currentItems
+          : [{ id: normalizedUrl, type: uploaded.type, url: normalizedUrl }, ...currentItems],
       );
       setStatus("idle");
     } catch (error) {
@@ -237,14 +229,16 @@ export function MediaUrlPicker({
     setStatus("idle");
     setMessage("");
 
-      if (file) void uploadFileObject(file);
+    if (file) void uploadFileObject(file);
   };
 
   return (
     <div className="block">
-      <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-gray-500">
-        {label}
-      </span>
+      {label && (
+        <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-gray-500">
+          {label}
+        </span>
+      )}
 
       <button
         type="button"
@@ -301,47 +295,57 @@ export function MediaUrlPicker({
 
             <div className="space-y-5 p-5">
               <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-3 transition-colors hover:border-[#e51b72] hover:bg-pink-50/40">
-                  <input
-                    type="file"
-                    accept={accept}
-                    className="sr-only"
-                    onChange={(event) => handleFileChange(event.target.files?.[0] ?? null)}
-                  />
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 text-[#e51b72]">
-                    {previewUrl && selectedFile?.type.startsWith("video/") ? (
-                      <video src={previewUrl} className="h-full w-full object-cover" muted />
-                    ) : previewUrl || uploadedPreviewUrl ? (
-                      <img
-                        src={previewUrl || getMediaPreviewUrl(uploadedPreviewUrl)}
-                        alt=""
-                        className="h-full w-full object-contain"
-                      />
-                    ) : (
-                      <UploadIcon />
-                    )}
+                <input
+                  type="file"
+                  accept={accept}
+                  className="sr-only"
+                  onChange={(event) => handleFileChange(event.target.files?.[0] ?? null)}
+                />
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 text-[#e51b72]">
+                  {previewUrl && selectedFile?.type.startsWith("video/") ? (
+                    <video src={previewUrl} className="h-full w-full object-cover" muted />
+                  ) : uploadedPreviewUrl && inferMediaType(uploadedPreviewUrl, mediaType) === "VIDEO" ? (
+                    <video
+                      src={getMediaPreviewUrl(uploadedPreviewUrl)}
+                      className="h-full w-full object-cover"
+                      muted
+                    />
+                  ) : previewUrl || uploadedPreviewUrl ? (
+                    <img
+                      src={previewUrl || getMediaPreviewUrl(uploadedPreviewUrl)}
+                      alt=""
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <UploadIcon />
+                  )}
+                </span>
+                <span className="flex min-w-0 flex-col justify-center">
+                  <span className="text-sm font-bold text-gray-800">
+                    {status === "saving" ? "Uploading media..." : "Click to upload media"}
                   </span>
-                  <span className="flex min-w-0 flex-col justify-center">
-                    <span className="text-sm font-bold text-gray-800">
-                      {status === "saving" ? "Uploading media..." : "Click to upload media"}
-                    </span>
-                  </span>
-                </label>
+                </span>
+              </label>
 
-                {message && (
-                  <div className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
-                    {message}
-                  </div>
-                )}
+              {message && (
+                <div className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+                  {message}
+                </div>
+              )}
 
               <div className="min-w-0">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wide text-gray-600">Saved Media</h3>
-                    <p className="mt-1 text-xs text-gray-400">Select, unselect, or delete media.</p>
-                  </div>
+                  <h3 className="text-xs font-bold uppercase tracking-wide text-gray-600">Saved Media</h3>
+                  {libraryLoading && <span className="text-[11px] text-gray-400">Loading...</span>}
                 </div>
 
-                {storedMediaUrls.length === 0 ? (
+                {libraryError && (
+                  <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+                    {libraryError}
+                  </div>
+                )}
+
+                {!libraryLoading && mediaLibrary.length === 0 ? (
                   <div className="flex min-h-64 items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 px-5 text-center">
                     <div>
                       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-white text-gray-400 shadow-sm">
@@ -355,24 +359,23 @@ export function MediaUrlPicker({
                   </div>
                 ) : (
                   <div className="grid max-h-[360px] grid-cols-2 gap-3 overflow-y-auto pr-1 sm:grid-cols-4">
-                    {storedMediaUrls.map((mediaUrl) => {
-                      const isSelected = selectedMediaUrls.includes(mediaUrl);
-                      const previewMediaUrl = getMediaPreviewUrl(mediaUrl);
-                      const savedMediaType = inferMediaType(mediaUrl, mediaType);
+                    {mediaLibrary.map((item) => {
+                      const isSelected = selectedMediaUrls.includes(item.url);
+                      const previewMediaUrl = item.absoluteUrl || getMediaPreviewUrl(item.url);
                       return (
                         <div
-                          key={mediaUrl}
+                          key={item.id}
                           className={`group relative overflow-hidden rounded-xl border bg-white text-left shadow-sm transition-all hover:border-[#e51b72] hover:shadow-md ${
                             isSelected ? "border-[#e51b72] ring-2 ring-[#e51b72]/15" : "border-gray-200"
                           }`}
                         >
                           <button
                             type="button"
-                            onClick={() => toggleSelectedMedia(mediaUrl)}
+                            onClick={() => toggleSelectedMedia(item.url)}
                             className="block w-full"
                           >
                             <span className="block h-28 bg-gray-100">
-                              {savedMediaType === "VIDEO" ? (
+                              {item.type === "VIDEO" ? (
                                 <video src={previewMediaUrl} className="h-full w-full object-cover" muted />
                               ) : (
                                 <img src={previewMediaUrl} alt="" className="h-full w-full object-cover" />
@@ -383,20 +386,10 @@ export function MediaUrlPicker({
                             <input
                               type="checkbox"
                               checked={isSelected}
-                              onChange={() => toggleSelectedMedia(mediaUrl)}
+                              onChange={() => toggleSelectedMedia(item.url)}
                               className="h-4 w-4 cursor-pointer accent-[#e51b72]"
                               aria-label="Select saved image"
                             />
-                          </span>
-                          <span className="absolute right-2 top-2">
-                            <button
-                              type="button"
-                              onClick={() => deleteStoredMedia(mediaUrl)}
-                              className="flex h-7 w-7 items-center justify-center rounded-md bg-white/95 text-red-600 shadow-sm ring-1 ring-red-100 hover:bg-red-50"
-                              aria-label="Delete saved image"
-                            >
-                              <TrashIcon />
-                            </button>
                           </span>
                         </div>
                       );

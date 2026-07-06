@@ -1,310 +1,281 @@
-import React, { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { courseApi } from "@/services/api";
+import type { Course as ApiCourse } from "@/services/api/types";
 
-interface Course {
-  id: string;
-  emoji: string;
+type CourseStatus = "Published" | "Draft" | "Archived";
+type ApiStatus = "PUBLISHED" | "DRAFT" | "ARCHIVED" | "ALL";
+
+interface ProjectItem {
   title: string;
-  instructor: string;
-  students: number;
-  modules: number;
-  pct: number;
-  color: string;
-  status: "Published" | "Draft" | "Archived";
+  summaries: string[];
+  videoUrl?: string;
+  videoFileName?: string;
+}
+
+interface UpcomingTask {
+  day: string;
+  title: string;
+}
+
+interface AdminCourse {
+  id: string;
+  title: string;
+  subject: string;
+  instructorName: string;
+  classLevel: string;
+  ageRange: string;
+  studentCount: number;
+  videoCount: number;
+  schedule: string;
+  status: CourseStatus;
+  coverColor: string;
+  projects: ProjectItem[];
+  upcoming: UpcomingTask[];
+  readyFormat: string[];
+}
+
+export type { AdminCourse, ProjectItem, UpcomingTask, CourseStatus };
+
+export const colors = ["#0ea5e9", "#22c55e", "#f59e0b", "#e51b72", "#7c3aed", "#14b8a6"];
+
+const PAGE_LIMIT = 50;
+
+const FILTER_TO_API_STATUS: Record<"All" | CourseStatus, ApiStatus> = {
+  All: "ALL",
+  Published: "PUBLISHED",
+  Draft: "DRAFT",
+  Archived: "ARCHIVED",
+};
+
+function statusFromApi(status?: string): CourseStatus {
+  if (status === "PUBLISHED") return "Published";
+  if (status === "ARCHIVED") return "Archived";
+  return "Draft";
+}
+
+function fromApiCourse(course: any): AdminCourse {
+  return {
+    id: course.id,
+    title: course.title,
+    subject: course.subjectName ?? course.subject?.name ?? "General",
+    instructorName: course.instructorName,
+    classLevel: course.classLevel ?? "Class 6",
+    ageRange: course.ageRange ?? "11-12",
+    studentCount: course.studentCount ?? 0,
+    videoCount: course.videoCount ?? course.moduleCount ?? 0,
+    schedule: course.schedule ?? "Weekly",
+    status: statusFromApi(course.status),
+    coverColor: course.coverColor || colors[0],
+    projects: (course.projects || []).map((p: any) => ({
+      title: p.title,
+      summaries: Array.isArray(p.summaries) && p.summaries.length ? p.summaries : [""],
+      videoUrl: p.videoUrl,
+      videoFileName: p.videoFileName,
+    })),
+    upcoming: course.upcoming || [],
+    readyFormat: course.readyFormat || [],
+  };
 }
 
 export default function CoursesPage() {
-  const [courses, setCourses] = useState<Course[]>([
-    { id: "1", emoji: "🤖", title: "Robotics 101", instructor: "Ms. Kapoor", students: 48, modules: 12, pct: 78, color: "bg-blue-500", status: "Published" },
-    { id: "2", emoji: "💻", title: "Python Basics", instructor: "Mr. Sharma", students: 36, modules: 8, pct: 62, color: "bg-green-500", status: "Published" },
-    { id: "3", emoji: "🧠", title: "AI & ML Intro", instructor: "Dr. Verma", students: 0, modules: 6, pct: 30, color: "bg-purple-500", status: "Draft" },
-    { id: "4", emoji: "⚡", title: "Electronics", instructor: "Mr. Singh", students: 29, modules: 10, pct: 55, color: "bg-orange-500", status: "Published" },
-  ]);
+  const navigate = useNavigate();
+  const [courses, setCourses] = useState<AdminCourse[]>([]);
+  const [filter, setFilter] = useState<"All" | CourseStatus>("All");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [status, setStatus] = useState<"idle" | "loading">("loading");
+  const [message, setMessage] = useState("");
 
-  const [filter, setFilter] = useState<"All" | "Published" | "Draft" | "Archived">("All");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [newTitle, setNewTitle] = useState("");
-  const [newInstructor, setNewInstructor] = useState("");
-  const [newModules, setNewModules] = useState(1);
-  const [newEmoji, setNewEmoji] = useState("📚");
-  const [newStatus, setNewStatus] = useState<"Published" | "Draft">("Draft");
-
-  const handleCreateCourse = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim() || !newInstructor.trim()) return;
-
-    const colors = ["bg-blue-500", "bg-green-500", "bg-purple-500", "bg-orange-500", "bg-rose-500", "bg-cyan-500"];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-
-    const newCourse: Course = {
-      id: Date.now().toString(),
-      emoji: newEmoji,
-      title: newTitle.trim(),
-      instructor: newInstructor.trim(),
-      students: 0,
-      modules: Number(newModules) || 1,
-      pct: 0,
-      color: randomColor,
-      status: newStatus,
+  useEffect(() => {
+    let isMounted = true;
+    setStatus("loading");
+    courseApi
+      .list({ page, limit: PAGE_LIMIT, status: FILTER_TO_API_STATUS[filter] })
+      .then((response) => {
+        if (!isMounted) return;
+        const data = response;
+        console.log("Courses API Response:", data);
+        const apiCourses = (data.courses || []).map(fromApiCourse);
+        setCourses(apiCourses);
+        setTotalPages(data.pagination?.pages ?? 1);
+        setTotal(data.pagination?.total ?? apiCourses.length);
+        setStatus("idle");
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setCourses([]);
+        setStatus("idle");
+        setMessage("Courses load nahi ho paye.");
+      });
+    return () => {
+      isMounted = false;
     };
+  }, [page, filter]);
 
-    setCourses((prev) => [newCourse, ...prev]);
-    setNewTitle("");
-    setNewInstructor("");
-    setNewModules(1);
-    setNewEmoji("📚");
-    setNewStatus("Draft");
-    setIsModalOpen(false);
+  const changeFilter = (tab: "All" | CourseStatus) => {
+    setFilter(tab);
+    setPage(1);
   };
 
-  const updateStatus = (id: string, nextStatus: "Published" | "Draft" | "Archived") => {
-    setCourses((prev) => prev.map((c) => (c.id === id ? { ...c, status: nextStatus } : c)));
-    setActiveDropdown(null);
+  const updateStatus = async (course: AdminCourse, nextStatus: CourseStatus) => {
+    try {
+      if (nextStatus === "Published") await courseApi.publish(course.id);
+      if (nextStatus === "Archived") await courseApi.archive(course.id);
+      setCourses((prev) => prev.map((c) => (c.id === course.id ? { ...c, status: nextStatus } : c)));
+      setMessage(`Course ${nextStatus} ho gaya.`);
+    } catch {
+      setMessage("Status update fail ho gaya.");
+    }
   };
 
-  const handleDeleteCourse = (id: string) => {
-    setCourses((prev) => prev.filter((c) => c.id !== id));
-    setActiveDropdown(null);
-  };
-
-  const filteredCourses = courses.filter((c) => filter === "All" || c.status === filter);
-
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "Published":
-        return "bg-green-100 text-green-700";
-      case "Draft":
-        return "bg-amber-100 text-amber-700";
-      case "Archived":
-        return "bg-gray-100 text-gray-600";
-      default:
-        return "bg-gray-100 text-gray-700";
+  const deleteCourse = async (course: AdminCourse) => {
+    try {
+      await courseApi.remove(course.id);
+      setCourses((prev) => prev.filter((c) => c.id !== course.id));
+      setTotal((t) => Math.max(0, t - 1));
+      setMessage("Course delete ho gaya.");
+    } catch {
+      setMessage("Delete fail ho gaya.");
     }
   };
 
   return (
     <>
-      <h1 className="text-2xl font-bold tracking-tight text-gray-800">Courses</h1>
-      <p className="text-sm text-gray-500 -mt-4">Manage all learning content</p>
-
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-          {(["All", "Published", "Draft", "Archived"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setFilter(t)}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                filter === t ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-800"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+      {/* Header */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-800">Courses</h1>
+          <p className="mt-1 text-sm text-gray-500">Projects aur videos ke saath student-facing course banayein.</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#e51b72] hover:bg-[#bd145c] text-white text-xs font-semibold transition-colors"
+          onClick={() => navigate("/add-courses", { state: { mode: "create" } })}
+          className="rounded-xl bg-[#e51b72] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#bd145c]"
         >
           + New Course
         </button>
       </div>
 
-      {filteredCourses.length === 0 ? (
-        <div className="bg-white border border-dashed border-gray-200 rounded-xl p-12 text-center text-xs text-gray-400">
-          No courses found matching this status segment.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {filteredCourses.map((c) => (
-            <div
-              key={c.id}
-              className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:-translate-y-1 transition-transform relative group"
+      {/* Filter tabs */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
+          {(["All", "Published", "Draft", "Archived"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => changeFilter(tab)}
+              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${filter === tab ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-800"}`}
             >
-              <div className="absolute top-2 right-2 z-10">
-                <button
-                  onClick={() => setActiveDropdown(activeDropdown === c.id ? null : c.id)}
-                  className="w-7 h-7 rounded-lg bg-white/80 backdrop-blur-sm border border-gray-100 shadow-sm flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors font-bold text-xs"
-                >
-                  •••
-                </button>
-                {activeDropdown === c.id && (
-                  <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg py-1 text-left z-20 text-xs">
-                    {c.status !== "Published" && (
-                      <button onClick={() => updateStatus(c.id, "Published")} className="w-full px-3 py-2 text-gray-700 hover:bg-gray-50 text-left">
-                        Set Published
+              {tab}
+            </button>
+          ))}
+        </div>
+        {message && <span className="text-xs font-semibold text-gray-500">{message}</span>}
+      </div>
+
+      {/* Table */}
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <table className="w-full min-w-[860px] border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-gray-200 bg-gray-50 text-xs font-semibold uppercase text-gray-500">
+              <th className="p-4 text-left">Course</th>
+              <th className="p-4 text-left">Projects</th>
+              <th className="p-4 text-left">Audience</th>
+              <th className="p-4 text-left">Status</th>
+              <th className="p-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {courses.length === 0 && (
+              <tr>
+                <td colSpan={5} className="p-8 text-center text-xs font-semibold text-gray-400">
+                  {status === "loading" ? "Loading..." : 'Koi course nahi mila. "+ New Course" se banayein.'}
+                </td>
+              </tr>
+            )}
+            {courses.map((course) => (
+              <tr key={course.id} className="hover:bg-gray-50/50">
+                <td className="p-4">
+                  <div className="font-bold text-gray-900">{course.title}</div>
+                  <div className="text-xs font-semibold text-gray-400">
+                    {course.subject} | {course.instructorName}
+                  </div>
+                </td>
+                <td className="p-4">
+                  <div className="text-xs font-bold text-gray-600">
+                    {course.projects.length} projects, {course.videoCount} videos
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-gray-400">
+                    {course.projects.filter((p) => p.videoUrl).length} / {course.projects.length} videos attached
+                  </div>
+                </td>
+                <td className="p-4 text-xs font-bold text-gray-600">
+                  {course.classLevel}, age {course.ageRange}
+                </td>
+                <td className="p-4">
+                  <span className="rounded-full bg-sky-50 px-2 py-1 text-[11px] font-bold text-sky-700">
+                    {course.status}
+                  </span>
+                </td>
+                <td className="p-4">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => navigate("/add-courses", { state: { mode: "edit", courseId: course.id } })}
+                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+                    >
+                      Edit
+                    </button>
+                    {course.status !== "Published" && (
+                      <button
+                        onClick={() => updateStatus(course, "Published")}
+                        className="rounded-lg border border-green-200 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-50"
+                      >
+                        Publish
                       </button>
                     )}
-                    {c.status !== "Draft" && (
-                      <button onClick={() => updateStatus(c.id, "Draft")} className="w-full px-3 py-2 text-gray-700 hover:bg-gray-50 text-left">
-                        Set Draft
-                      </button>
-                    )}
-                    {c.status !== "Archived" && (
-                      <button onClick={() => updateStatus(c.id, "Archived")} className="w-full px-3 py-2 text-gray-700 hover:bg-gray-50 text-left">
+                    {course.status !== "Archived" && (
+                      <button
+                        onClick={() => updateStatus(course, "Archived")}
+                        className="rounded-lg border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50"
+                      >
                         Archive
                       </button>
                     )}
-                    <hr className="border-gray-100 my-1" />
-                    <button onClick={() => handleDeleteCourse(c.id)} className="w-full px-3 py-2 text-red-600 hover:bg-red-50 text-left font-medium">
-                      Delete Course
+                    <button
+                      onClick={() => deleteCourse(course)}
+                      className="rounded-lg border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+                    >
+                      Delete
                     </button>
                   </div>
-                )}
-              </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-              <div className="h-28 bg-gray-50 flex items-center justify-center text-5xl border-b border-gray-100">
-                {c.emoji}
-              </div>
-
-              <div className="p-4">
-                <div className="font-bold text-gray-800 text-sm mb-1 truncate" title={c.title}>
-                  {c.title}
-                </div>
-                <div className="text-[11px] text-gray-400 mb-3 truncate">
-                  {`${c.students} students · ${c.modules} modules · ${c.instructor}`}
-                </div>
-
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-3">
-                  <div className={`h-full rounded-full ${c.color}`} style={{ width: `${c.pct}%` }} />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${getStatusStyle(c.status)}`}>
-                    {c.status}
-                  </span>
-                  {c.status === "Draft" ? (
-                    <button
-                      onClick={() => updateStatus(c.id, "Published")}
-                      className="text-xs font-semibold text-[#e51b72] hover:underline"
-                    >
-                      Publish
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setActiveDropdown(activeDropdown === c.id ? null : c.id)}
-                      className="text-xs font-semibold text-gray-500 hover:underline"
-                    >
-                      Manage
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {isModalOpen && (
-        <div
-          className="fixed inset-0 z-[200] bg-black/40 flex items-center justify-center p-4"
-          onClick={() => setIsModalOpen(false)}
-        >
-          <div
-            className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="bg-[#e51b72] px-5 py-4 text-white">
-              <h2 className="text-sm font-bold">Create New Learning Course</h2>
-              <p className="text-[11px] text-white/70 mt-0.5">Initialize a module workspace for target students</p>
-            </div>
-
-            <form onSubmit={handleCreateCourse} className="p-5 space-y-4 text-xs">
-              <div className="grid grid-cols-4 gap-3">
-                <div className="col-span-1">
-                  <label className="block text-[11px] font-bold uppercase text-gray-500 mb-1">Icon</label>
-                  <select
-                    value={newEmoji}
-                    onChange={(e) => setNewEmoji(e.target.value)}
-                    className="w-full px-2 py-2 border border-gray-200 rounded-lg bg-white text-center text-sm"
-                  >
-                    <option value="🤖">🤖</option>
-                    <option value="💻">💻</option>
-                    <option value="🧠">🧠</option>
-                    <option value="⚡">⚡</option>
-                    <option value="📚">📚</option>
-                    <option value="🔬">🔬</option>
-                  </select>
-                </div>
-                <div className="col-span-3">
-                  <label className="block text-[11px] font-bold uppercase text-gray-500 mb-1">Course Title *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="e.g. Advanced Embedded Systems"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-[#e51b72]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold uppercase text-gray-500 mb-1">Instructor Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newInstructor}
-                    onChange={(e) => setNewInstructor(e.target.value)}
-                    placeholder="e.g. Prof. Malhotra"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-[#e51b72]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold uppercase text-gray-500 mb-1">Total Modules</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={newModules}
-                    onChange={(e) => setNewModules(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-[#e51b72]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold uppercase text-gray-500 mb-1">Initial Visibility Status</label>
-                <div className="flex gap-4 mt-1.5">
-                  <label className="flex items-center gap-1.5 cursor-pointer font-medium text-gray-700">
-                    <input
-                      type="radio"
-                      name="status"
-                      checked={newStatus === "Draft"}
-                      onChange={() => setNewStatus("Draft")}
-                      className="accent-[#e51b72]"
-                    />
-                    Save as Draft
-                  </label>
-                  <label className="flex items-center gap-1.5 cursor-pointer font-medium text-gray-700">
-                    <input
-                      type="radio"
-                      name="status"
-                      checked={newStatus === "Published"}
-                      onChange={() => setNewStatus("Published")}
-                      className="accent-[#e51b72]"
-                    />
-                    Publish Directly
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#e51b72] hover:bg-[#bd145c] text-white font-semibold transition-colors"
-                >
-                  Create Course
-                </button>
-              </div>
-            </form>
+      {/* Pagination */}
+      {total > 0 && (
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs font-semibold text-gray-500">
+            Page {page} of {totalPages} · {total} total courses
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
           </div>
         </div>
       )}
