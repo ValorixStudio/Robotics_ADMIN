@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
 import AdminLayout from "@/components/AdminLayout";
 import DashboardPage from "@/pages/DashboardPage";
 import ComponentsPage from "@/pages/ComponentsPage";
@@ -14,6 +15,8 @@ import TutorialsPage from "@/pages/TutorialsPage";
 import { AuthProvider } from "@/provider/AuthProvider";
 import CurriculumPage from "@/pages/CurriculumPage";
 import QuizzesPage from "@/pages/QuizzesPage";
+import QuizBuilderPage from "@/pages/QuizBuilderPage";
+import QuizReviewPage from "@/pages/QuizReviewPage";
 import LiveclassPage from "@/pages/LiveclassPage";
 import StudentsPage from "@/pages/StudentsPage";
 import TeachersPage from "@/pages/TeachersPage";
@@ -58,50 +61,59 @@ function App() {
 
   if (!isAuthenticated) {
     return (
-      <Routes>
-        <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+      <>
+        <Routes>
+          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+        <ToastContainer position="top-right" autoClose={3500} newestOnTop />
+      </>
     );
   }
 
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<Navigate to="/" replace />} />
-        <Route element={<AdminLayout onLogout={handleLogout} />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="components" element={<ComponentsPage />} />
-          <Route path="courses" element={<CoursesPage />} />
-          <Route path="add-courses" element={<AddCoursesPage />} />
-          <Route path="add-tutorials" element={<AddTutorial />} />
-          <Route path="edit-tutorials" element={<AddTutorial />} />
-          <Route path="tutorials" element={<TutorialsPage />} />
-          <Route path="curriculum" element={<CurriculumPage />} />
-          <Route path="assignments" element={<AssignmentsPage />} />
-          <Route path="quizzes" element={<QuizzesPage />} />
-          <Route path="liveclass" element={<LiveclassPage />} />
-          <Route path="resources" element={<ResourcesPage />} />
-          <Route path="students" element={<StudentsPage />} />
-          <Route path="teachers" element={<TeachersPage />} />
-          <Route path="learnerprofile" element={<LearnerprofilePage />} />
-          <Route path="attendance" element={<AttendancePage />} />
-          <Route path="leaderboard" element={<LeaderboardPage />} />
-          <Route path="announcements" element={<AnnouncementsPage />} />
-          <Route path="messages" element={<MessagesPage />} />
-          <Route path="calendar" element={<CalendarPage />} />
-          <Route path="circuits" element={<CircuitsPage />} />
-          <Route path="3d_model" element={<ThreeDModelPage />} />
-          <Route path="grades" element={<GradesPage />} />
-          <Route path="certificates" element={<CertificatesPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="roles-permissions" element={<RoleAndPermissionPage />} />
-          <Route path="profile" element={<AdminProfilePage />} />
-          <Route path="*" element={<PageNotFound />} />
-        </Route>
-      </Routes>
-    </AuthProvider>
+    <>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route element={<AdminLayout onLogout={handleLogout} />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="components" element={<ComponentsPage />} />
+            <Route path="courses" element={<CoursesPage />} />
+            <Route path="add-courses" element={<AddCoursesPage />} />
+            <Route path="add-tutorials" element={<AddTutorial />} />
+            <Route path="edit-tutorials" element={<AddTutorial />} />
+            <Route path="tutorials" element={<TutorialsPage />} />
+            <Route path="curriculum" element={<CurriculumPage />} />
+            <Route path="assignments" element={<AssignmentsPage />} />
+            <Route path="quizzes" element={<QuizzesPage />} />
+            <Route path="quizzes/add" element={<QuizBuilderPage />} />
+            <Route path="quizzes/edit/:quizSetId" element={<QuizBuilderPage />} />
+            <Route path="quiz-review" element={<QuizReviewPage />} />
+            <Route path="liveclass" element={<LiveclassPage />} />
+            <Route path="resources" element={<ResourcesPage />} />
+            <Route path="students" element={<StudentsPage />} />
+            <Route path="teachers" element={<TeachersPage />} />
+            <Route path="learnerprofile" element={<LearnerprofilePage />} />
+            <Route path="attendance" element={<AttendancePage />} />
+            <Route path="leaderboard" element={<LeaderboardPage />} />
+            <Route path="announcements" element={<AnnouncementsPage />} />
+            <Route path="messages" element={<MessagesPage />} />
+            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="circuits" element={<CircuitsPage />} />
+            <Route path="3d_model" element={<ThreeDModelPage />} />
+            <Route path="grades" element={<GradesPage />} />
+            <Route path="certificates" element={<CertificatesPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="roles-permissions" element={<RoleAndPermissionPage />} />
+            <Route path="profile" element={<AdminProfilePage />} />
+            <Route path="*" element={<PageNotFound />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
+      <ToastContainer position="top-right" autoClose={3500} newestOnTop />
+    </>
   );
 }
 

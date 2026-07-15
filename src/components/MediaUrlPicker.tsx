@@ -217,6 +217,8 @@ export function MediaUrlPicker({
           ? currentItems
           : [{ id: normalizedUrl, type: uploaded.type, url: normalizedUrl }, ...currentItems],
       );
+      onChange(normalizedUrl, uploaded.type);
+      onUploaded?.(normalizedUrl);
       setStatus("idle");
     } catch (error) {
       setStatus("error");

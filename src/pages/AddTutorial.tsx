@@ -124,8 +124,8 @@ export default function AddTutorialPage() {
   const navigate = useNavigate();
   const location = useLocation() as { state?: { mode?: "create" | "edit"; tutorialId?: string } };
   const mode = location.state?.mode ?? "create";
+  const tutorialId = location.state?.tutorialId;
   console.log("AddTutorialPage mode:", mode, "location.state:", location.state); // Debugging: Log the mode and location state
-  const incomingTutorial = location.state?.tutorial;
 
   const [form, setForm] = useState<TutorialFormState>(emptyForm);
   const [loadingTutorial, setLoadingTutorial] = useState(mode === "edit");
@@ -135,40 +135,75 @@ export default function AddTutorialPage() {
   const languageMenuRef = useRef<HTMLDivElement>(null);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  
-useEffect(() => {
-  if (mode !== "edit" || !incomingTutorial) return;
+  // Fetch tutorial data when in edit mode
+  useEffect(() => {
+    if (mode !== "edit" || !tutorialId) {
+      setLoadingTutorial(false);
+      return;
+    }
 
-  const t = incomingTutorial;
-  const languages: Language[] = Array.isArray(t.languages) && t.languages.length ? t.languages : ["english"];
-  const content: Partial<Record<Language, LanguageContent>> = {};
+    let isMounted = true;
 
-  languages.forEach((lang) => {
-    const c = t.content?.[lang] ?? {};
-    content[lang] = {
-      title: c.title ?? "",
-      description: c.description ?? "",
-      chapters: Array.isArray(c.chapters)
-        ? c.chapters.map((ch: ChapterEntry) => `${ch.time} - ${ch.title}`).join("\n")
-        : c.chapters ?? "",
-      videoUrl: c.videoUrl,
-      videoFileName: c.videoFileName,
-      thumbnailUrl: c.thumbnailUrl,
-      thumbnailFileName: c.thumbnailFileName,
+    const fetchTutorial = async () => {
+      try {
+        const response = await fetch(`${tutorialListApi}/${tutorialId}`);
+        if (!isMounted) return;
+
+        if (!response.ok) {
+          setMessage("Failed to load tutorial.");
+          setLoadingTutorial(false);
+          return;
+        }
+
+        const data = await response.json();
+        const t = data.tutorial || data;
+
+        const languages: Language[] = Array.isArray(t.languages) && t.languages.length ? t.languages : ["english"];
+        const content: Partial<Record<Language, LanguageContent>> = {};
+
+        languages.forEach((lang) => {
+          const c = t.content?.[lang] ?? {};
+          content[lang] = {
+            title: c.title ?? "",
+            description: c.description ?? "",
+            chapters: Array.isArray(c.chapters)
+              ? c.chapters.map((ch: ChapterEntry) => `${ch.time} - ${ch.title}`).join("\n")
+              : c.chapters ?? "",
+            videoUrl: c.videoUrl,
+            videoFileName: c.videoFileName,
+            thumbnailUrl: c.thumbnailUrl,
+            thumbnailFileName: c.thumbnailFileName,
+          };
+        });
+
+        if (isMounted) {
+          setForm({
+            id: t.id,
+            slug: t.slug ?? "",
+            classLevel: t.classLevel ?? "",
+            subject: t.subjectName ?? "",
+            subjectId: t.subjectId ?? "",
+            languages,
+            content,
+            pricing: t.pricing ?? "free",
+          });
+          setLoadingTutorial(false);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error("Error fetching tutorial:", error);
+          setMessage("Failed to load tutorial. Please try again.");
+          setLoadingTutorial(false);
+        }
+      }
     };
-  });
 
-  setForm({
-    id: t.id,
-    slug: t.slug ?? "",
-    classLevel: t.classLevel ?? "",
-    subject: t.subjectName ?? "",
-    subjectId: t.subjectId ?? "",
-    languages,
-    content,
-    pricing: t.pricing ?? "free",
-  });
-}, [mode, incomingTutorial]);
+    fetchTutorial();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [mode, tutorialId]);
 
   // Close the language dropdown when clicking outside of it
   useEffect(() => {
@@ -327,6 +362,7 @@ useEffect(() => {
       await callSetter({
         url: apiUrl,
         bodyData: payload,
+        method: mode === "edit" ? "put" : "post",
       });
 
       setMessage(mode === "edit" ? "Tutorial updated successfully." : "Tutorial saved successfully.");

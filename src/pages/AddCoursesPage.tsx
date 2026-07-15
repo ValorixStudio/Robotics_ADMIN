@@ -408,7 +408,7 @@ export default function AddCoursesPage() {
         nextCourse.apiId = saved.id;
       }
     } catch {
-      setMessage("Locally save hua. API available nahi hai abhi.");
+      setMessage("Saved locally. The API is not available right now.");
     }
 
     const nextCourses = existingCourse

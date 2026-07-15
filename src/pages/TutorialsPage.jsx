@@ -9,15 +9,15 @@ const PAGE_LIMIT = 10; // API pagination default limit is 10
 
 const FILTER_TO_API_STATUS = {
   All: "ALL",
-  Published: "PUBLISHED",
-  Draft: "DRAFT",
-  Archived: "ARCHIVED",
+  Published: "published",
+  Draft: "draft",
+  Archived: "archived",
 };
 
-// Fallback status handle karne ke liye jab backend se status na aaye
+// Fallback status when the backend does not return a status.
 function statusFromApi(status) {
-  if (status === "PUBLISHED") return "Published";
-  if (status === "ARCHIVED") return "Archived";
+  if (status === "published") return "Published";
+  if (status === "archived") return "Archived";
   return "Draft"; // Default fallback status
 }
 
@@ -35,7 +35,7 @@ function fromApiTutorial(item) {
     pricing: item.pricing ?? "free",
     languages: item.languages || ["english"],
     videoCount: Array.isArray(contentMap.chapters) ? contentMap.chapters.length : 0,
-    status: statusFromApi(item.status), // Agar api me status field miss ho toh handle ho sake
+    status: statusFromApi(item.status), // Handles missing status from the API.
     thumbnail: contentMap.thumbnailUrl || null,
   };
 }
@@ -50,6 +50,7 @@ export default function TutorialsPage() {
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState("loading");
   const [message, setMessage] = useState("");
+  const [confirmModal, setConfirmModal] = useState({ visible: false, type: null, tutorial: null, nextStatus: null });
 
   useEffect(() => {
     let isMounted = true;
@@ -86,7 +87,7 @@ export default function TutorialsPage() {
         if (!isMounted) return;
         setTutorials([]);
         setStatus("idle");
-        setMessage("Tutorials load nahi ho paye.");
+        setMessage("Failed to load tutorials.");
       });
 
     return () => {
@@ -94,7 +95,7 @@ export default function TutorialsPage() {
     };
   }, [page, filter]);
 
-  // Alert message automatic hide karne ke liye
+  // Automatically hide alert messages.
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => setMessage(""), 4000);
@@ -107,30 +108,51 @@ export default function TutorialsPage() {
     setPage(1);
   };
 
-  const updateStatus = async (tutorial, nextStatus) => {
-    try {
-      await callSetter({
-        url: `${tutorialListApi}/${tutorial.id}`,
-        bodyData: { status: FILTER_TO_API_STATUS[nextStatus] },
-      });
-      
-      setTutorials((prev) => prev.map((t) => (t.id === tutorial.id ? { ...t, status: nextStatus } : t)));
-      setMessage(`Tutorial ${nextStatus} ho gaya.`);
-    } catch {
-      setMessage("Status update fail ho gaya.");
-    }
-  };
+  // Open confirm modal for delete
+  const openDeleteConfirm = (tutorial) =>
+    setConfirmModal({ visible: true, type: "delete", tutorial, nextStatus: null });
 
-  const deleteTutorial = async (tutorial) => {
-    if (!window.confirm("Kya aap sach me ye tutorial delete karna chahte hain?")) return;
-    try {
-      await fetch(`${tutorialListApi}/${tutorial.id}`, { method: "DELETE" });
-      
-      setTutorials((prev) => prev.filter((t) => t.id !== tutorial.id));
-      setTotal((t) => Math.max(0, t - 1));
-      setMessage("Tutorial delete ho gaya.");
-    } catch {
-      setMessage("Delete fail ho gaya.");
+  // Open confirm modal for status change
+  const openStatusConfirm = (tutorial, nextStatus) =>
+    setConfirmModal({ visible: true, type: "status", tutorial, nextStatus });
+
+  const closeConfirm = () => setConfirmModal({ visible: false, type: null, tutorial: null, nextStatus: null });
+
+  const handleConfirm = async () => {
+    const { type, tutorial, nextStatus } = confirmModal;
+    if (!tutorial) return closeConfirm();
+
+    if (type === "delete") {
+      try {
+        const res = await fetch(`${tutorialListApi}/${tutorial.id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("delete-failed");
+        setTutorials((prev) => prev.filter((t) => t.id !== tutorial.id));
+        setTotal((t) => Math.max(0, t - 1));
+        setMessage("Tutorial deleted.");
+      } catch (e) {
+        setMessage("Delete failed.");
+      } finally {
+        closeConfirm();
+      }
+      return;
+    }
+
+    if (type === "status") {
+      try {
+        await callSetter({
+          url: `${tutorialListApi}/${tutorial.id}/status`,
+          bodyData: { status: FILTER_TO_API_STATUS[nextStatus] },
+          method: "patch",
+        });
+        setTutorials((prev) => prev.map((t) => (t.id === tutorial.id ? { ...t, status: nextStatus } : t)));
+        const statusMap = { Published: "Published", Archived: "Archived", Draft: "Draft" };
+        setMessage(`Tutorial ${statusMap[nextStatus] || nextStatus}.`);
+      } catch (e) {
+        setMessage("Status update failed.");
+      } finally {
+        closeConfirm();
+      }
+      return;
     }
   };
 
@@ -140,7 +162,7 @@ export default function TutorialsPage() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">Tutorials Management</h1>
-          <p className="mt-1 text-sm text-gray-500">Multilingual tutorials, assets, aur class mappings ko manage karein.</p>
+          <p className="mt-1 text-sm text-gray-500">Manage multilingual tutorials, assets, and class mappings.</p>
         </div>
         <button
           onClick={() => navigate("/add-tutorials", { state: { mode: "create" } })}
@@ -192,13 +214,13 @@ export default function TutorialsPage() {
               {status === "loading" ? (
                 <tr>
                   <td colSpan={6} className="p-12 text-center text-sm font-medium text-gray-400">
-                    Data loading ho raha hai...
+                    Loading data...
                   </td>
                 </tr>
               ) : tutorials.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-12 text-center text-sm font-medium text-gray-400">
-                    Koi tutorials nahi mile. Naya tutorial add karein.
+                    No tutorials found. Add a new tutorial.
                   </td>
                 </tr>
               ) : (
@@ -209,7 +231,7 @@ export default function TutorialsPage() {
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-[10px] font-bold text-gray-400 overflow-hidden border border-gray-200">
                           {tutorial.thumbnail ? (
-                            <img src={`http://localhost:4010${tutorial.thumbnail}`} alt="" className="h-full w-full object-cover" />
+                            <img src={`${tutorial.thumbnail}`} alt="" className="h-full w-full object-cover" />
                           ) : (
                             "VIDEO"
                           )}
@@ -266,14 +288,14 @@ export default function TutorialsPage() {
                     <td className="p-4">
                       <div className="flex justify-end gap-1.5">
                         <button
-                          onClick={() => navigate("/edit-tutorials", { state: { mode: "edit", tutorialId: tutorial.id } })}
+                          onClick={() => navigate("/add-tutorials", { state: { mode: "edit", tutorialId: tutorial.id } })}
                           className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
                         >
                           Edit
                         </button>
                         {tutorial.status !== "Published" && (
                           <button
-                            onClick={() => updateStatus(tutorial, "Published")}
+                            onClick={() => openStatusConfirm(tutorial, "Published")}
                             className="rounded-lg border border-transparent bg-green-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-green-700"
                           >
                             Publish
@@ -281,14 +303,14 @@ export default function TutorialsPage() {
                         )}
                         {tutorial.status !== "Archived" && (
                           <button
-                            onClick={() => updateStatus(tutorial, "Archived")}
+                            onClick={() => openStatusConfirm(tutorial, "Archived")}
                             className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm hover:bg-amber-50"
                           >
                             Archive
                           </button>
                         )}
                         <button
-                          onClick={() => deleteTutorial(tutorial)}
+                          onClick={() => openDeleteConfirm(tutorial)}
                           className="rounded-lg border border-red-100 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 shadow-sm hover:bg-red-50/80"
                         >
                           Delete
@@ -302,6 +324,31 @@ export default function TutorialsPage() {
           </table>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmModal.visible && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={closeConfirm} />
+          <div className="z-10 mx-4 max-w-lg rounded-lg bg-white p-6 shadow-lg">
+              <h3 className="mb-4 text-lg font-bold text-gray-900">Confirm</h3>
+              <p className="mb-6 text-sm text-gray-700">
+                {confirmModal.type === "delete"
+                  ? "Are you sure you want to delete this tutorial?"
+                  : `Are you sure you want to ${
+                      confirmModal.nextStatus === "Published" ? "publish" : confirmModal.nextStatus === "Archived" ? "archive" : String(confirmModal.nextStatus).toLowerCase()
+                    } this tutorial?`}
+              </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={closeConfirm} className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold">
+                Cancel
+              </button>
+              <button onClick={handleConfirm} className="rounded-lg bg-[#e51b72] px-3 py-1.5 text-sm font-semibold text-white">
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pagination Controls */}
       {total > 0 && (

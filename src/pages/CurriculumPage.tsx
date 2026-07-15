@@ -111,7 +111,7 @@ export default function CurriculumPage() {
         setModules(nextModules);
         setSelectedModuleId((current) => current || nextModules[0]?.id || "");
       } catch {
-        if (!ignore) setError("Curriculum modules load nahi ho paye.");
+        if (!ignore) setError("Could not load curriculum modules.");
       } finally {
         if (!ignore) setIsLoading(false);
       }
@@ -232,7 +232,7 @@ export default function CurriculumPage() {
       setSelectedModuleId(savedModule.id);
       resetForm();
     } catch {
-      setError("Module save nahi ho paya. API/server check karein.");
+      setError("Could not save the module. Please check the API/server.");
     } finally {
       setIsSaving(false);
     }
@@ -249,7 +249,7 @@ export default function CurriculumPage() {
       });
       if (editingModuleId === moduleId) resetForm();
     } catch {
-      setError("Module delete nahi ho paya. API/server check karein.");
+      setError("Could not delete the module. Please check the API/server.");
     }
   };
 

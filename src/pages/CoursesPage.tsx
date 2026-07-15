@@ -107,7 +107,7 @@ export default function CoursesPage() {
         if (!isMounted) return;
         setCourses([]);
         setStatus("idle");
-        setMessage("Courses load nahi ho paye.");
+        setMessage("Could not load courses.");
       });
     return () => {
       isMounted = false;
@@ -124,9 +124,9 @@ export default function CoursesPage() {
       if (nextStatus === "Published") await courseApi.publish(course.id);
       if (nextStatus === "Archived") await courseApi.archive(course.id);
       setCourses((prev) => prev.map((c) => (c.id === course.id ? { ...c, status: nextStatus } : c)));
-      setMessage(`Course ${nextStatus} ho gaya.`);
+      setMessage(`Course ${nextStatus} successfully.`);
     } catch {
-      setMessage("Status update fail ho gaya.");
+      setMessage("Could not update status.");
     }
   };
 
@@ -135,9 +135,9 @@ export default function CoursesPage() {
       await courseApi.remove(course.id);
       setCourses((prev) => prev.filter((c) => c.id !== course.id));
       setTotal((t) => Math.max(0, t - 1));
-      setMessage("Course delete ho gaya.");
+      setMessage("Course deleted successfully.");
     } catch {
-      setMessage("Delete fail ho gaya.");
+      setMessage("Could not delete course.");
     }
   };
 
@@ -147,7 +147,7 @@ export default function CoursesPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-800">Courses</h1>
-          <p className="mt-1 text-sm text-gray-500">Projects aur videos ke saath student-facing course banayein.</p>
+          <p className="mt-1 text-sm text-gray-500">Create student-facing courses with projects and videos.</p>
         </div>
         <button
           onClick={() => navigate("/add-courses", { state: { mode: "create" } })}
@@ -189,7 +189,7 @@ export default function CoursesPage() {
             {courses.length === 0 && (
               <tr>
                 <td colSpan={5} className="p-8 text-center text-xs font-semibold text-gray-400">
-                  {status === "loading" ? "Loading..." : 'Koi course nahi mila. "+ New Course" se banayein.'}
+                  {status === "loading" ? "Loading..." : 'No courses found. Use "+ New Course" to create one.'}
                 </td>
               </tr>
             )}
