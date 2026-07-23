@@ -1,6 +1,7 @@
 import axios from "axios";
 import { API_BASE_URL, API_KEY } from "@/config/apiUrls";
 import { authToken } from "@/lib/authToken";
+import { notifyUnauthorized } from "@/lib/authSession";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -19,5 +20,16 @@ apiClient.interceptors.request.use((config) => {
 
   return config;
 });
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      notifyUnauthorized();
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 export default apiClient;

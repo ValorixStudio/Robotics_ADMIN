@@ -6,6 +6,7 @@ import { SubjectPicker } from "@/components/SubjectPicker";
 import { MediaUrlPicker } from "@/components/MediaUrlPicker";
 import { componentGuideApi } from "@/services/api";
 import { tutorialListApi } from "@/config/apiUrls";
+import { useGetter } from "@/hooks/getter";
 import { useSetter } from "@/hooks/setter";
 
 type Language = "english" | "hindi" | "hinglish" | "spanish" | "french";
@@ -43,6 +44,7 @@ export interface TutorialFormState {
   languages: Language[];
   content: Partial<Record<Language, LanguageContent>>;
   pricing: Pricing;
+  order: number;
 }
 
 // Field-level validation error map. Top-level keys: "classLevel", "languages", "subject".
@@ -73,6 +75,7 @@ const emptyForm: TutorialFormState = {
   languages: ["english"],
   content: { english: emptyLanguageContent() },
   pricing: "free",
+  order: 1,
 };
 
 function richTextToPlainText(value: string) {
@@ -120,6 +123,7 @@ function fieldClass(hasError: boolean, extra = "") {
 }
 
 export default function AddTutorialPage() {
+  const { callGetter } = useGetter();
   const { callSetter } = useSetter();
   const navigate = useNavigate();
   const location = useLocation() as { state?: { mode?: "create" | "edit"; tutorialId?: string } };
@@ -146,16 +150,17 @@ export default function AddTutorialPage() {
 
     const fetchTutorial = async () => {
       try {
-        const response = await fetch(`${tutorialListApi}/${tutorialId}`);
+        const data = await callGetter<{ tutorial?: any }>({
+          url: `${tutorialListApi}/${tutorialId}`,
+        });
         if (!isMounted) return;
 
-        if (!response.ok) {
+        if (!data) {
           setMessage("Failed to load tutorial.");
           setLoadingTutorial(false);
           return;
         }
 
-        const data = await response.json();
         const t = data.tutorial || data;
 
         const languages: Language[] = Array.isArray(t.languages) && t.languages.length ? t.languages : ["english"];
@@ -186,6 +191,7 @@ export default function AddTutorialPage() {
             languages,
             content,
             pricing: t.pricing ?? "free",
+            order: Number(t.order ?? 1),
           });
           setLoadingTutorial(false);
         }
@@ -290,6 +296,7 @@ export default function AddTutorialPage() {
     subjectId: form.subjectId,
     subjectName: form.subject,
     pricing: form.pricing,
+    order: Number.isFinite(form.order) ? form.order : 1,
     languages: form.languages,
     content: form.languages.reduce((acc, lang) => {
       const c = form.content[lang] ?? emptyLanguageContent();
@@ -320,6 +327,9 @@ export default function AddTutorialPage() {
     if (form.languages.length === 0) {
       next.languages = "Please select at least one language.";
     }
+    if (!Number.isInteger(Number(form.order)) || Number(form.order) < 0) {
+      next.order = "Order must be 0 or greater.";
+    }
 
     form.languages.forEach((lang) => {
       const c = form.content[lang] ?? emptyLanguageContent();
@@ -328,12 +338,6 @@ export default function AddTutorialPage() {
       }
       if (!richTextToPlainText(c.description)) {
         next[`description-${lang}`] = `Description is required for ${languageLabel(lang)}.`;
-      }
-      if (!c.videoUrl) {
-        next[`videoUrl-${lang}`] = `Video is required for ${languageLabel(lang)}.`;
-      }
-      if (!c.thumbnailUrl) {
-        next[`thumbnailUrl-${lang}`] = `Thumbnail is required for ${languageLabel(lang)}.`;
       }
     });
 
@@ -485,6 +489,33 @@ export default function AddTutorialPage() {
             </div>
 
             <div>
+              <label className={label} htmlFor="order">
+                Display Order
+              </label>
+              <input
+                id="order"
+                type="number"
+                min={0}
+                step={1}
+                className={fieldClass(!!errors.order)}
+                value={form.order}
+                onChange={(e) => {
+                  update("order", Number(e.target.value));
+                  clearError("order");
+                }}
+                aria-invalid={!!errors.order}
+                aria-describedby={errors.order ? "order-error" : undefined}
+              />
+              {errors.order ? (
+                <span id="order-error" className={errorText}>
+                  {errors.order}
+                </span>
+              ) : (
+                <span className={helpText}>Lower numbers show first, e.g. 1 is first and 2 is second.</span>
+              )}
+            </div>
+
+            <div>
               <label className={label} htmlFor="subject">
                 Subject <span className="text-red-600">*</span>
               </label>
@@ -586,7 +617,7 @@ export default function AddTutorialPage() {
 
                 <div>
                   <label className={label}>
-                    Main Video File <span className="text-red-600">*</span>
+                    Main Video File
                   </label>
                   <div className={videoError ? "rounded-lg ring-1 ring-red-500" : ""}>
                     <MediaUrlPicker
@@ -598,7 +629,7 @@ export default function AddTutorialPage() {
                       uploadFile={async (file) => componentGuideApi.uploadMedia(file)}
                       onChange={(url) => {
                         updateLanguageField(lang, "videoUrl", url);
-                        updateLanguageField(lang, "videoFileName", url.split("/").pop() || "Selected video");
+                        updateLanguageField(lang, "videoFileName", url ? url.split("/").pop() || "Selected video" : "");
                       }}
                     />
                   </div>
@@ -608,7 +639,7 @@ export default function AddTutorialPage() {
                 <div className="grid gap-6 md:grid-cols-2">
                   <div>
                     <label className={label} htmlFor={`thumbnail-${lang}`}>
-                      Thumbnail Poster <span className="text-red-600">*</span>
+                      Thumbnail Poster
                     </label>
                     <div className={thumbnailError ? "rounded-lg ring-1 ring-red-500" : ""}>
                       <MediaUrlPicker
@@ -620,7 +651,7 @@ export default function AddTutorialPage() {
                         uploadFile={async (file) => componentGuideApi.uploadMedia(file)}
                         onChange={(url) => {
                           updateLanguageField(lang, "thumbnailUrl", url);
-                          updateLanguageField(lang, "thumbnailFileName", url.split("/").pop() || "Selected image");
+                          updateLanguageField(lang, "thumbnailFileName", url ? url.split("/").pop() || "Selected image" : "");
                         }}
                       />
                     </div>

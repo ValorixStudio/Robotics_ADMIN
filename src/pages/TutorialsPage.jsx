@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { tutorialListApi } from "@/config/apiUrls";
+import { useGetter } from "@/hooks/getter";
 import { useSetter } from "@/hooks/setter";
 
 export const colors = ["#0ea5e9", "#22c55e", "#f59e0b", "#e51b72", "#7c3aed", "#14b8a6"];
@@ -33,6 +34,7 @@ function fromApiTutorial(item) {
     subject: item.subjectName ?? "General",
     classLevel: item.classLevel ?? "N/A",
     pricing: item.pricing ?? "free",
+    order: Number(item.order ?? 0),
     languages: item.languages || ["english"],
     videoCount: Array.isArray(contentMap.chapters) ? contentMap.chapters.length : 0,
     status: statusFromApi(item.status), // Handles missing status from the API.
@@ -42,6 +44,7 @@ function fromApiTutorial(item) {
 
 export default function TutorialsPage() {
   const navigate = useNavigate();
+  const { callGetter } = useGetter();
   const { callSetter } = useSetter();
   const [tutorials, setTutorials] = useState([]);
   const [filter, setFilter] = useState("All");
@@ -66,12 +69,15 @@ export default function TutorialsPage() {
       queryParams.append("status", FILTER_TO_API_STATUS[filter]);
     }
 
-    fetch(`${tutorialListApi}?${queryParams.toString()}`)
-      .then((res) => res.json())
-      .then((response) => {
+    const fetchTutorials = async () => {
+      try {
+        const response = await callGetter({
+          url: tutorialListApi,
+          bodyData: Object.fromEntries(queryParams.entries()),
+        });
         if (!isMounted) return;
         
-        if (response.ok) {
+        if (response && response.ok) {
           const tutorialsList = response.tutorials || [];
           const mappedTutorials = tutorialsList.map(fromApiTutorial);
           
@@ -82,13 +88,15 @@ export default function TutorialsPage() {
           setMessage("Failed to load data from server.");
         }
         setStatus("idle");
-      })
-      .catch(() => {
+      } catch {
         if (!isMounted) return;
         setTutorials([]);
         setStatus("idle");
         setMessage("Failed to load tutorials.");
-      });
+      }
+    };
+
+    fetchTutorials();
 
     return () => {
       isMounted = false;
@@ -124,8 +132,11 @@ export default function TutorialsPage() {
 
     if (type === "delete") {
       try {
-        const res = await fetch(`${tutorialListApi}/${tutorial.id}`, { method: "DELETE" });
-        if (!res.ok) throw new Error("delete-failed");
+        const res = await callSetter({
+          url: `${tutorialListApi}/${tutorial.id}`,
+          method: "delete",
+        });
+        if (!res) throw new Error("delete-failed");
         setTutorials((prev) => prev.filter((t) => t.id !== tutorial.id));
         setTotal((t) => Math.max(0, t - 1));
         setMessage("Tutorial deleted.");
@@ -203,6 +214,7 @@ export default function TutorialsPage() {
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/70 text-xs font-bold uppercase tracking-wider text-gray-500">
                 <th className="p-4">Info / Title</th>
+                <th className="p-4">Order</th>
                 <th className="p-4">Class Target</th>
                 <th className="p-4">Available Languages</th>
                 <th className="p-4">Pricing</th>
@@ -213,13 +225,13 @@ export default function TutorialsPage() {
             <tbody className="divide-y divide-gray-100">
               {status === "loading" ? (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-sm font-medium text-gray-400">
+                  <td colSpan={7} className="p-12 text-center text-sm font-medium text-gray-400">
                     Loading data...
                   </td>
                 </tr>
               ) : tutorials.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-12 text-center text-sm font-medium text-gray-400">
+                  <td colSpan={7} className="p-12 text-center text-sm font-medium text-gray-400">
                     No tutorials found. Add a new tutorial.
                   </td>
                 </tr>
@@ -241,6 +253,12 @@ export default function TutorialsPage() {
                           <div className="text-xs text-gray-400 font-mono mt-0.5">/{tutorial.slug}</div>
                         </div>
                       </div>
+                    </td>
+
+                    <td className="p-4">
+                      <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-md bg-gray-100 px-2 text-xs font-bold text-gray-700">
+                        {tutorial.order}
+                      </span>
                     </td>
 
                     {/* Class Level Target */}

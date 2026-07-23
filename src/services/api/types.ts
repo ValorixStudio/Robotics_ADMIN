@@ -38,10 +38,29 @@ export interface CourseListParams {
 
 export interface CreateCourseRequest {
   title: string;
-  description: string;
+  description?: string;
   instructorName: string;
   moduleCount: number;
   coverColor: string;
+  subject?: string;
+  subjectId?: string;
+  subjectImage?: string;
+  classLevel?: string;
+  ageRange?: string;
+  videoCount?: number;
+  schedule?: string;
+  projects?: Array<{
+    title: string;
+    summaries: string[];
+    videoUrl?: string;
+    videoFileName?: string;
+  }>;
+  upcoming?: Array<{
+    day: string;
+    title: string;
+  }>;
+  readyFormat?: string[];
+  status?: Exclude<CourseStatus, "ALL"> | "Published" | "Draft" | "Archived";
 }
 
 export interface UpdateCourseRequest {
@@ -52,6 +71,17 @@ export interface UpdateCourseRequest {
   coverColor?: string;
   progress?: number;
   studentCount?: number;
+  subject?: string;
+  subjectId?: string;
+  subjectImage?: string;
+  classLevel?: string;
+  ageRange?: string;
+  videoCount?: number;
+  schedule?: string;
+  projects?: CreateCourseRequest["projects"];
+  upcoming?: CreateCourseRequest["upcoming"];
+  readyFormat?: string[];
+  status?: CreateCourseRequest["status"];
 }
 
 export interface Course extends CreateCourseRequest {

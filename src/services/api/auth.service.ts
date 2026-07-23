@@ -1,6 +1,7 @@
 import { API_URLS } from "@/config/apiUrls";
 import apiClient from "@/lib/apiClient";
 import { authToken } from "@/lib/authToken";
+import { clearAuthSession } from "@/lib/authSession";
 import type {
   AuthResponse,
   AuthUser,
@@ -34,5 +35,5 @@ export const authApi = {
     return data;
   },
 
-  logout: () => authToken.remove(),
+  logout: () => clearAuthSession(),
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import AdminLayout from "@/components/AdminLayout";
@@ -37,8 +37,7 @@ import LoginPage from "@/pages/LoginPage";
 import PageNotFound from "@/pages/PageNotFound";
 import { authToken } from "@/lib/authToken";
 import { authApi } from "@/services/api";
-
-const AUTH_STORAGE_KEY = "circuit-studio-admin-auth";
+import { AUTH_STORAGE_KEY, AUTH_UNAUTHORIZED_EVENT } from "@/lib/authSession";
 
 function App() {
   const navigate = useNavigate();
@@ -58,6 +57,16 @@ function App() {
     setIsAuthenticated(false);
     navigate("/login", { replace: true });
   };
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setIsAuthenticated(false);
+      navigate("/login", { replace: true });
+    };
+
+    window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+  }, [navigate]);
 
   if (!isAuthenticated) {
     return (
@@ -82,6 +91,7 @@ function App() {
             <Route path="components" element={<ComponentsPage />} />
             <Route path="courses" element={<CoursesPage />} />
             <Route path="add-courses" element={<AddCoursesPage />} />
+            <Route path="edit-courses" element={<AddCoursesPage />} />
             <Route path="add-tutorials" element={<AddTutorial />} />
             <Route path="edit-tutorials" element={<AddTutorial />} />
             <Route path="tutorials" element={<TutorialsPage />} />

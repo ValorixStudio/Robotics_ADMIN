@@ -168,6 +168,13 @@ export function MediaUrlPicker({
     resetModal();
   };
 
+  const clearSelectedMedia = () => {
+    setSelectedMediaUrls([]);
+    setSelectedFile(null);
+    setUploadedPreviewUrl("");
+    onChange("", mediaType);
+  };
+
   const toggleSelectedMedia = (url: string) => {
     const normalizedUrl = toSafeString(url).trim();
     if (!normalizedUrl) return;
@@ -242,32 +249,46 @@ export function MediaUrlPicker({
         </span>
       )}
 
-      <button
-        type="button"
-        onClick={openModal}
-        className="group flex min-h-[58px] w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-sm text-gray-800 outline-none transition-colors hover:border-[#e51b72] hover:bg-pink-50/30 focus:border-[#e51b72] focus:ring-2 focus:ring-[#e51b72]/10"
-      >
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 text-gray-400 group-hover:border-pink-200 group-hover:text-[#e51b72]">
-          {value && inferMediaType(value, mediaType) === "VIDEO" ? (
-            <video src={getMediaPreviewUrl(value)} className="h-full w-full object-cover" muted />
-          ) : value ? (
-            <img src={getMediaPreviewUrl(value)} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <ImageIcon />
-          )}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className={value ? "block truncate font-semibold text-gray-800" : "block font-semibold text-gray-500"}>
-            {value ? `${inferMediaType(value, mediaType) === "VIDEO" ? "Video" : "Image"} selected` : emptyText}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={openModal}
+          className="group flex min-h-[58px] min-w-0 flex-1 items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-sm text-gray-800 outline-none transition-colors hover:border-[#e51b72] hover:bg-pink-50/30 focus:border-[#e51b72] focus:ring-2 focus:ring-[#e51b72]/10"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 text-gray-400 group-hover:border-pink-200 group-hover:text-[#e51b72]">
+            {value && inferMediaType(value, mediaType) === "VIDEO" ? (
+              <video src={getMediaPreviewUrl(value)} className="h-full w-full object-cover" muted />
+            ) : value ? (
+              <img src={getMediaPreviewUrl(value)} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <ImageIcon />
+            )}
           </span>
-          <span className="mt-0.5 block truncate text-[11px] text-gray-400">
-            {value || (mediaType === "VIDEO" ? "Upload MP4, WEBM, MOV, or OGG" : "Upload PNG, JPG, WEBP, or GIF")}
+          <span className="min-w-0 flex-1">
+            <span className={value ? "block truncate font-semibold text-gray-800" : "block font-semibold text-gray-500"}>
+              {value ? `${inferMediaType(value, mediaType) === "VIDEO" ? "Video" : "Image"} selected` : emptyText}
+            </span>
+            <span className="mt-0.5 block truncate text-[11px] text-gray-400">
+              {value || (mediaType === "VIDEO" ? "Upload MP4, WEBM, MOV, or OGG" : "Upload PNG, JPG, WEBP, or GIF")}
+            </span>
           </span>
-        </span>
-        <span className="shrink-0 rounded-md bg-gray-100 px-2.5 py-1.5 text-[10px] font-bold text-gray-500 group-hover:bg-[#e51b72] group-hover:text-white">
-          Browse
-        </span>
-      </button>
+          <span className="shrink-0 rounded-md bg-gray-100 px-2.5 py-1.5 text-[10px] font-bold text-gray-500 group-hover:bg-[#e51b72] group-hover:text-white">
+            Browse
+          </span>
+        </button>
+
+        {value && (
+          <button
+            type="button"
+            onClick={clearSelectedMedia}
+            className="flex min-h-[58px] w-12 shrink-0 items-center justify-center rounded-lg border border-red-100 bg-red-50 text-red-600 transition-colors hover:bg-red-100"
+            aria-label={`Remove selected ${inferMediaType(value, mediaType) === "VIDEO" ? "video" : "image"}`}
+            title={`Remove selected ${inferMediaType(value, mediaType) === "VIDEO" ? "video" : "image"}`}
+          >
+            <TrashIcon />
+          </button>
+        )}
+      </div>
 
       {isOpen && (
         <div
@@ -402,6 +423,19 @@ export function MediaUrlPicker({
             </div>
 
             <div className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-4">
+              {value && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearSelectedMedia();
+                    closeModal();
+                  }}
+                  className="mr-auto inline-flex items-center gap-2 rounded-lg border border-red-100 bg-white px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50"
+                >
+                  <TrashIcon />
+                  Remove
+                </button>
+              )}
               <button
                 type="button"
                 onClick={closeModal}

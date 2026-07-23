@@ -4,6 +4,7 @@
 import axios, { AxiosError } from "axios";
 import { useAuth } from "../provider/AuthProvider";
 import { toast } from "react-toastify";
+import { notifyUnauthorized } from "@/lib/authSession";
 
 // 1. Define the structure of the incoming arguments for a GET request
 interface GetterPayload {
@@ -38,6 +39,12 @@ export const useGetter = () => {
       // 3. Type-safe handling of Axios errors
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError<ApiErrorResponse>;
+        if (axiosError.response?.status === 401) {
+          notifyUnauthorized();
+          toast.error("Session expired. Please login again.");
+          return false;
+        }
+
         const errorMessage = axiosError.response?.data?.msg;
         
         if (errorMessage) {

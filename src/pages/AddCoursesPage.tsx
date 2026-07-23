@@ -2,11 +2,13 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import { ChevronDown, FileText, Plus, Trash2 } from "lucide-react";
 import { courseApi } from "@/services/api";
 import { SubjectPicker } from "@/components/SubjectPicker";
-import { colors, normalizeSummaries, type AdminCourse, type ProjectItem } from "./CoursesPage";
+import { colors, fromApiCourse, type AdminCourse, type ProjectItem } from "./CoursesPage";
 
 type CourseStatus = "Published" | "Draft" | "Archived";
+type ApiCourseStatus = "PUBLISHED" | "DRAFT" | "ARCHIVED";
 type CKEditorConstructor = React.ComponentProps<typeof CKEditor>["editor"];
 
 const classicEditor = ClassicEditor as unknown as CKEditorConstructor;
@@ -36,6 +38,7 @@ const emptyDraft: CourseDraft = {
   title: "",
   subject: "",
   subjectId: "",
+  subjectImage: "",
   instructorName: "Admin",
   classLevel: "Class 6",
   ageRange: "11-12",
@@ -53,8 +56,8 @@ function draftFromCourse(course: AdminCourse): CourseDraft {
   return {
     title: course.title,
     subject: course.subject || "",
-    // @ts-expect-error - subjectId may not exist on older AdminCourse records yet
     subjectId: course.subjectId || "",
+    subjectImage: course.subjectImage || "",
     instructorName: course.instructorName,
     classLevel: course.classLevel,
     ageRange: course.ageRange,
@@ -101,8 +104,8 @@ function courseFromDraft(draft: CourseDraft, current?: AdminCourse): AdminCourse
     apiId: current?.apiId,
     title: draft.title.trim(),
     subject: draft.subject.trim() || "General",
-    // @ts-expect-error - subjectId may not exist on older AdminCourse type yet
     subjectId: draft.subjectId || "",
+    subjectImage: draft.subjectImage || "",
     instructorName: draft.instructorName.trim() || "Admin",
     classLevel: draft.classLevel.trim() || "Class 6",
     ageRange: draft.ageRange.trim() || "11-12",
@@ -315,33 +318,115 @@ function ProjectSummaries({ projectIndex, summaries, onChange }: ProjectSummarie
 }
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
+type CourseSectionId = "info" | "projects";
+
+function CourseFormSection({
+  id,
+  title,
+  summary,
+  open,
+  onToggle,
+  children,
+  action,
+}: {
+  id: CourseSectionId;
+  title: string;
+  summary: string;
+  open: boolean;
+  onToggle: (id: CourseSectionId) => void;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between gap-4 px-5 py-4">
+        <button
+          type="button"
+          onClick={() => onToggle(id)}
+          className="min-w-0 flex-1 text-left"
+          aria-expanded={open}
+        >
+          <span className="block text-[15px] font-bold text-gray-900">{title}</span>
+          <span className="mt-1 block truncate text-xs font-semibold text-gray-500">{summary}</span>
+        </button>
+        <div className="flex items-center gap-3">
+          {action}
+          <button
+            type="button"
+            onClick={() => onToggle(id)}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-500 transition-colors hover:border-[#e51b72] hover:bg-pink-50 hover:text-[#e51b72]"
+            aria-label={open ? `Collapse ${title}` : `Expand ${title}`}
+          >
+            <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+          </button>
+        </div>
+      </div>
+
+      <div className={`grid transition-all duration-200 ease-in-out ${open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+        <div className="overflow-hidden">
+          <div className="border-t border-gray-100 p-6 sm:p-8">{children}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function AddCoursesPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [draft, setDraft] = useState<CourseDraft>(emptyDraft);
-  const [status, setStatus] = useState<"idle" | "saving">("idle");
-  const [message, setMessage] = useState("");
-  const [expandedProject, setExpandedProject] = useState<number | null>(null);
-
   const mode = location.state?.mode || "create";
   const courseId = location.state?.courseId;
   const courseCount = location.state?.courseCount || 0;
 
+  const [draft, setDraft] = useState<CourseDraft>(emptyDraft);
+  const [currentCourse, setCurrentCourse] = useState<AdminCourse | undefined>(undefined);
+  const [loadingCourse, setLoadingCourse] = useState(mode === "edit");
+  const [status, setStatus] = useState<"idle" | "saving">("idle");
+  const [message, setMessage] = useState("");
+  const [expandedProject, setExpandedProject] = useState<number | null>(null);
+  const [openSections, setOpenSections] = useState<CourseSectionId[]>(["info"]);
+
+  const toggleSection = (sectionId: CourseSectionId) => {
+    setOpenSections((current) =>
+      current.includes(sectionId) ? current.filter((id) => id !== sectionId) : [...current, sectionId],
+    );
+  };
+
   // Load course if editing
   useEffect(() => {
     if (mode === "edit" && courseId) {
-      // const courses = loadLocalCourses();
-      // const course = courses.find((c) => c.id === courseId);
-      // if (course) {
-      //   setDraft(draftFromCourse(course));
-      // }
+      let isMounted = true;
+      setLoadingCourse(true);
+      setMessage("");
+
+      courseApi
+        .get(courseId)
+        .then((course) => {
+          if (!isMounted) return;
+          const mappedCourse = fromApiCourse(course);
+          setCurrentCourse(mappedCourse);
+          setDraft(draftFromCourse(mappedCourse));
+          setLoadingCourse(false);
+        })
+        .catch(() => {
+          if (!isMounted) return;
+          setMessage("Could not load course details.");
+          setLoadingCourse(false);
+        });
+
+      return () => {
+        isMounted = false;
+      };
     } else if (mode === "create") {
       setDraft({ ...emptyDraft, coverColor: colors[courseCount % colors.length] });
+      setCurrentCourse(undefined);
+      setLoadingCourse(false);
     }
   }, [mode, courseId, courseCount]);
 
   const addProject = () => {
     setDraft((d) => ({ ...d, projects: [...d.projects, { title: "", summaries: [""], videoUrl: "", videoFileName: "" }] }));
+    setOpenSections((current) => (current.includes("projects") ? current : [...current, "projects"]));
   };
 
   const removeProject = (index: number) => {
@@ -368,17 +453,19 @@ export default function AddCoursesPage() {
       return;
     }
 
-    const courses =[];
-    const existingCourse = courseId ? courses.find((c) => c.id === courseId) : undefined;
+    const existingCourse = currentCourse;
     const nextCourse = courseFromDraft(draft, existingCourse);
 
     // Full structured payload — projects/upcoming/readyFormat as real arrays,
     // plus subjectId sent alongside subject name.
+    const apiStatus: ApiCourseStatus =
+      nextCourse.status === "Published" ? "PUBLISHED" : nextCourse.status === "Archived" ? "ARCHIVED" : "DRAFT";
+
     const payload = {
       title: nextCourse.title,
       subject: nextCourse.subject,
-      // @ts-expect-error - subjectId may not exist on older AdminCourse type yet
       subjectId: nextCourse.subjectId || "",
+      subjectImage: nextCourse.subjectImage || "",
       classLevel: nextCourse.classLevel,
       ageRange: nextCourse.ageRange,
       instructorName: nextCourse.instructorName,
@@ -390,16 +477,16 @@ export default function AddCoursesPage() {
       projects: nextCourse.projects,
       upcoming: nextCourse.upcoming,
       readyFormat: nextCourse.readyFormat,
-      status: nextCourse.status,
+      status: apiStatus,
     };
 
     try {
       setStatus("saving");
       setMessage("");
-      if (existingCourse?.apiId) {
-        const saved = await courseApi.update(existingCourse.apiId, {
+      if (mode === "edit" && (existingCourse?.apiId || courseId)) {
+        const saved = await courseApi.update(existingCourse?.apiId || courseId, {
           ...payload,
-          progress: existingCourse.status === "Published" ? 100 : 0,
+          progress: existingCourse?.status === "Published" ? 100 : 0,
         });
         nextCourse.apiId = saved.id;
       } else {
@@ -408,16 +495,22 @@ export default function AddCoursesPage() {
         nextCourse.apiId = saved.id;
       }
     } catch {
-      setMessage("Saved locally. The API is not available right now.");
+      setStatus("idle");
+      setMessage("Could not save course. Please try again.");
+      return;
     }
-
-    const nextCourses = existingCourse
-      ? courses.map((c) => (c.id === existingCourse.id ? nextCourse : c))
-      : [nextCourse, ...courses];
 
     setStatus("idle");
     navigate("/courses");
   };
+
+  if (loadingCourse) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 text-sm font-semibold text-gray-500">
+        Loading course...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -425,28 +518,58 @@ export default function AddCoursesPage() {
       <div className="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {mode === "edit" ? "Edit Course" : "Create New Course"}
+            <p className="text-xs font-bold uppercase tracking-wide text-[#e51b72]">
+              {mode === "edit" ? "edit-courses" : "add-courses"}
+            </p>
+            <h1 className="mt-1 text-2xl font-bold text-gray-900">
+              {mode === "edit" ? "Edit Course" : "Create Course"}
             </h1>
-            <p className="mt-1 text-sm text-gray-500">Add project details, summaries, and videos</p>
+            <p className="mt-1 text-sm text-gray-500">Open a section, update the details, then save.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => navigate("/courses")}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate("/courses")}
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50"
+            >
+              Back
+            </button>
+            <button
+              type="submit"
+              form="course-form"
+              disabled={status === "saving"}
+              className="rounded-lg bg-[#e51b72] px-5 py-2 text-xs font-bold text-white hover:bg-[#bd145c] disabled:opacity-50"
+            >
+              {status === "saving" ? "Saving..." : mode === "edit" ? "Update Course" : "Create Course"}
+            </button>
+          </div>
         </div>
       </div>
 
-      <form onSubmit={saveCourse} className="max-w-6xl mx-auto px-6 py-8 space-y-8">
-        {/* Basic Information Section */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-6">Course Information</h2>
+      <form id="course-form" onSubmit={saveCourse} className="max-w-6xl mx-auto px-6 py-8 space-y-5">
+        <div className="grid gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:grid-cols-4">
+          {[
+            { label: "Course", value: draft.title || "Untitled" },
+            { label: "Subject", value: draft.subject || "Not selected" },
+            { label: "Class", value: draft.classLevel || "Not selected" },
+            { label: "Projects", value: String(draft.projects.length) },
+          ].map((item) => (
+            <div key={item.label} className="rounded-lg bg-gray-50 px-4 py-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">{item.label}</p>
+              <p className="mt-1 truncate text-sm font-bold text-gray-800">{item.value}</p>
+            </div>
+          ))}
+        </div>
+        <CourseFormSection
+          id="info"
+          title="Course Information"
+          summary={`${draft.classLevel || "Class"} / ${draft.subject || "Subject"} / ${draft.title || "Course title"}`}
+          open={openSections.includes("info")}
+          onToggle={toggleSection}
+        >
 
           <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid gap-6 md:grid-cols-2">
                 <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Class <span className="text-red-600">*</span>
@@ -470,8 +593,13 @@ export default function AddCoursesPage() {
 
                  <SubjectPicker
                   value={draft.subject}
-                  onChange={(name: string, id?: string) =>
-                    setDraft({ ...draft, subject: name, subjectId: name ? (id ?? draft.subjectId) : "" })
+                  onChange={(name: string, id?: string, image?: string) =>
+                    setDraft({
+                      ...draft,
+                      subject: name,
+                      subjectId: name ? (id ?? draft.subjectId) : "",
+                      subjectImage: name ? (image ?? draft.subjectImage) : "",
+                    })
                   }
                 />
               </div>
@@ -494,7 +622,7 @@ export default function AddCoursesPage() {
 
 
             {/* Three Column Layout */}
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid gap-6 md:grid-cols-3">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Age Range
@@ -533,42 +661,51 @@ export default function AddCoursesPage() {
               </div>
             </div>
           </div>
-        </div>
+        </CourseFormSection>
 
-        {/* Projects Section */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900">Projects</h2>
+        <CourseFormSection
+          id="projects"
+          title="Projects"
+          summary={`${draft.projects.length} project${draft.projects.length === 1 ? "" : "s"} / ${draft.projects.filter((project) => project.videoUrl).length} video${draft.projects.filter((project) => project.videoUrl).length === 1 ? "" : "s"} attached`}
+          open={openSections.includes("projects")}
+          onToggle={toggleSection}
+          action={
             <button
               type="button"
-              onClick={addProject}
-              className="flex items-center gap-2 rounded-lg bg-[#e51b72] px-4 py-2 text-sm font-semibold text-white hover:bg-[#bd145c] transition-colors"
+              onClick={(event) => {
+                event.stopPropagation();
+                addProject();
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#e51b72] px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#bd145c]"
             >
-              <span>+</span> Add Project
+              <Plus className="h-3.5 w-3.5" />
+              Add Project
             </button>
-          </div>
+          }
+        >
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {draft.projects.map((project, idx) => (
-              <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+              <div key={idx} className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                 {/* Project Header */}
-                <div className="bg-gray-100 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-gray-700">
+                <div className="flex items-center justify-between border-b border-gray-100 bg-white px-5 py-4">
+                  <span className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-bold text-gray-700">
                     Project {idx + 1}
                   </span>
                   {draft.projects.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeProject(idx)}
-                      className="text-sm font-semibold text-red-600 hover:text-red-700"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100"
                     >
-                      Remove Project
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Remove
                     </button>
                   )}
                 </div>
 
                 {/* Project Content */}
-                <div className="p-6 space-y-6">
+                <div className="space-y-5 bg-white p-5">
                   {/* Project Title */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -588,11 +725,11 @@ export default function AddCoursesPage() {
                     <button
                       type="button"
                       onClick={() => setExpandedProject(expandedProject === idx ? null : idx)}
-                      className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-50"
+                      className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-50"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-pink-50 text-[#e51b72]">
-                          📝
+                        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-pink-50 text-[0px] text-[#e51b72]">
+                          <FileText className="h-4 w-4" />
                         </span>
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-gray-800">Project Description</p>
@@ -604,9 +741,9 @@ export default function AddCoursesPage() {
                         </div>
                       </div>
                       <span
-                        className={`flex-shrink-0 text-gray-400 transition-transform duration-200 ${expandedProject === idx ? "rotate-180" : ""}`}
+                        className={`inline-flex flex-shrink-0 items-center justify-center text-[0px] text-gray-400 transition-transform duration-200 ${expandedProject === idx ? "rotate-180" : ""}`}
                       >
-                        ▾
+                        <ChevronDown className="h-4 w-4" />
                       </span>
                     </button>
 
@@ -636,7 +773,7 @@ export default function AddCoursesPage() {
               </div>
             ))}
           </div>
-        </div>
+        </CourseFormSection>
 
         {/* Action Buttons */}
         <div className="flex gap-4 pb-8">

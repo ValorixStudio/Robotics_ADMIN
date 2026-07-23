@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { useSetter } from "@/hooks/setter";
 
 interface ImageUploaderProps {
   value: string;
@@ -8,6 +9,7 @@ interface ImageUploaderProps {
 }
 
 export function ImageUploader({ value, onChange, label = "Upload Image", disabled = false }: ImageUploaderProps) {
+  const { callSetter } = useSetter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,14 +32,14 @@ export function ImageUploader({ value, onChange, label = "Upload Image", disable
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
+      const data = await callSetter<{ url?: string }>({
+        url: "/api/upload",
+        method: "post",
+        bodyData: formData,
       });
 
-      if (!response.ok) throw new Error("Upload failed");
+      if (!data) throw new Error("Upload failed");
 
-      const data = (await response.json()) as { url?: string };
       if (data.url) {
         onChange(data.url);
       }

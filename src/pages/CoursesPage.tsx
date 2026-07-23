@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { courseApi } from "@/services/api";
-import type { Course as ApiCourse } from "@/services/api/types";
+import { API_BASE_URL } from "@/config/apiUrls";
 
 type CourseStatus = "Published" | "Draft" | "Archived";
 type ApiStatus = "PUBLISHED" | "DRAFT" | "ARCHIVED" | "ALL";
@@ -20,8 +20,11 @@ interface UpcomingTask {
 
 interface AdminCourse {
   id: string;
+  apiId?: string;
   title: string;
   subject: string;
+  subjectId?: string;
+  subjectImage?: string;
   instructorName: string;
   classLevel: string;
   ageRange: string;
@@ -49,17 +52,32 @@ const FILTER_TO_API_STATUS: Record<"All" | CourseStatus, ApiStatus> = {
 };
 
 function statusFromApi(status?: string): CourseStatus {
-  if (status === "PUBLISHED") return "Published";
-  if (status === "ARCHIVED") return "Archived";
+  const normalizedStatus = status?.toUpperCase();
+  if (normalizedStatus === "PUBLISHED") return "Published";
+  if (normalizedStatus === "ARCHIVED") return "Archived";
   return "Draft";
 }
 
-function fromApiCourse(course: any): AdminCourse {
+export function normalizeSummaries(summaries: unknown): string[] {
+  return Array.isArray(summaries) && summaries.length ? summaries.map(String) : [""];
+}
+
+export function getMediaPreviewUrl(url?: string) {
+  if (!url) return "";
+  if (/^(https?:|blob:|data:)/i.test(url)) return url;
+
+  return `${API_BASE_URL.replace(/\/$/, "")}/${url.replace(/^\//, "")}`;
+}
+
+export function fromApiCourse(course: any): AdminCourse {
   return {
     id: course.id,
-    title: course.title,
-    subject: course.subjectName ?? course.subject?.name ?? "General",
-    instructorName: course.instructorName,
+    apiId: course.id,
+    title: course.title ?? "Untitled Course",
+    subject: course.subjectName ?? course.subject?.name ?? course.subject ?? "General",
+    subjectId: course.subjectId ?? course.subject?.id ?? "",
+    subjectImage: course.subjectImage ?? course.subject?.image ?? course.subject?.imageUrl ?? "",
+    instructorName: course.instructorName ?? "Admin",
     classLevel: course.classLevel ?? "Class 6",
     ageRange: course.ageRange ?? "11-12",
     studentCount: course.studentCount ?? 0,
@@ -68,8 +86,8 @@ function fromApiCourse(course: any): AdminCourse {
     status: statusFromApi(course.status),
     coverColor: course.coverColor || colors[0],
     projects: (course.projects || []).map((p: any) => ({
-      title: p.title,
-      summaries: Array.isArray(p.summaries) && p.summaries.length ? p.summaries : [""],
+      title: p.title ?? "",
+      summaries: normalizeSummaries(p.summaries),
       videoUrl: p.videoUrl,
       videoFileName: p.videoFileName,
     })),
@@ -95,12 +113,10 @@ export default function CoursesPage() {
       .list({ page, limit: PAGE_LIMIT, status: FILTER_TO_API_STATUS[filter] })
       .then((response) => {
         if (!isMounted) return;
-        const data = response;
-        console.log("Courses API Response:", data);
-        const apiCourses = (data.courses || []).map(fromApiCourse);
+        const apiCourses = response.courses.map(fromApiCourse);
         setCourses(apiCourses);
-        setTotalPages(data.pagination?.pages ?? 1);
-        setTotal(data.pagination?.total ?? apiCourses.length);
+        setTotalPages(response.pagination.pages);
+        setTotal(response.pagination.total);
         setStatus("idle");
       })
       .catch(() => {
@@ -197,8 +213,17 @@ export default function CoursesPage() {
               <tr key={course.id} className="hover:bg-gray-50/50">
                 <td className="p-4">
                   <div className="font-bold text-gray-900">{course.title}</div>
-                  <div className="text-xs font-semibold text-gray-400">
-                    {course.subject} | {course.instructorName}
+                  <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-gray-400">
+                    {course.subjectImage && (
+                      <img
+                        src={getMediaPreviewUrl(course.subjectImage)}
+                        alt=""
+                        className="h-6 w-6 rounded-md border border-gray-200 object-cover"
+                      />
+                    )}
+                    <span>
+                      {course.subject} | {course.instructorName}
+                    </span>
                   </div>
                 </td>
                 <td className="p-4">
@@ -220,7 +245,7 @@ export default function CoursesPage() {
                 <td className="p-4">
                   <div className="flex justify-end gap-2">
                     <button
-                      onClick={() => navigate("/add-courses", { state: { mode: "edit", courseId: course.id } })}
+                      onClick={() => navigate("/edit-courses", { state: { mode: "edit", courseId: course.id } })}
                       className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50"
                     >
                       Edit

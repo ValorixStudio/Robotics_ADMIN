@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { MediaUrlPicker } from "./MediaUrlPicker";
 import { componentGuideApi } from "@/services/api";
+import { API_BASE_URL } from "@/config/apiUrls";
 import { useGetter } from "@/hooks/getter";
 import { useSetter } from "@/hooks/setter";
 
@@ -8,6 +9,13 @@ export interface Subject {
   id: string;
   name: string;
   image: string; // data URL / uploaded media URL
+}
+
+function getMediaPreviewUrl(url?: string) {
+  if (!url) return "";
+  if (/^(https?:|blob:|data:)/i.test(url)) return url;
+
+  return `${API_BASE_URL.replace(/\/$/, "")}/${url.replace(/^\//, "")}`;
 }
 
 // ─── Add / Edit Subject Modal ───────────────────────────────────────
@@ -38,7 +46,7 @@ function SubjectModal({ editingSubject, onClose, onSaved }: SubjectModalProps) {
 
       if (editingSubject) {
         const response = await callSetter({
-          url: `${import.meta.env.VITE_API_BASE_URL}/subjects/update`,
+          url: `${API_BASE_URL.replace(/\/$/, "")}/subjects/update`,
           bodyData: {
             id: editingSubject.id,
             name: name.trim(),
@@ -53,7 +61,7 @@ function SubjectModal({ editingSubject, onClose, onSaved }: SubjectModalProps) {
         onSaved(updatedSubject, previousName);
       } else {
         const response = await callSetter({
-          url: `${import.meta.env.VITE_API_BASE_URL}/subjects/add`,
+          url: `${API_BASE_URL.replace(/\/$/, "")}/subjects/add`,
           bodyData: {
             name: name.trim(),
             image: imagePreview,
@@ -187,7 +195,7 @@ function DeleteConfirm({
 // ─── Subject Picker (replaces the plain text input) ────────────────
 interface SubjectPickerProps {
   value: string;
-  onChange: (name: string, id?: string) => void;
+  onChange: (name: string, id?: string, image?: string) => void;
 }
 
 export function SubjectPicker({ value, onChange }: SubjectPickerProps) {
@@ -208,7 +216,7 @@ export function SubjectPicker({ value, onChange }: SubjectPickerProps) {
     setLoadError("");
     try {
       const response = await callGetter({
-        url: `${import.meta.env.VITE_API_BASE_URL}/subjects`,
+        url: `${API_BASE_URL.replace(/\/$/, "")}/subjects`,
       });
       setSubjects(response?.data ?? []);
     } catch {
@@ -230,9 +238,9 @@ export function SubjectPicker({ value, onChange }: SubjectPickerProps) {
       return exists ? current.map((s) => (s.id === subject.id ? subject : s)) : [subject, ...current];
     });
     if (previousName && previousName === value) {
-      onChange(subject.name, subject.id);
+      onChange(subject.name, subject.id, subject.image);
     } else if (!previousName) {
-      onChange(subject.name, subject.id); // newly created subject gets auto-selected
+      onChange(subject.name, subject.id, subject.image); // newly created subject gets auto-selected
     }
     setModalSubject(undefined);
     setShowList(false);
@@ -244,12 +252,12 @@ export function SubjectPicker({ value, onChange }: SubjectPickerProps) {
     setDeleteError("");
     try {
       await callSetter({
-        url: `${import.meta.env.VITE_API_BASE_URL}/subjects/delete`,
+        url: `${API_BASE_URL.replace(/\/$/, "")}/subjects/delete`,
         bodyData: { id: deletingSubject.id },
       });
       setSubjects((current) => current.filter((s) => s.id !== deletingSubject.id));
       if (value === deletingSubject.name) {
-        onChange("", undefined); // clear selection if the deleted subject was selected
+        onChange("", undefined, undefined); // clear selection if the deleted subject was selected
       }
       setDeletingSubject(null);
     } catch {
@@ -268,7 +276,7 @@ export function SubjectPicker({ value, onChange }: SubjectPickerProps) {
           className="flex flex-1 items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none hover:border-[#e51b72] text-left"
         >
           {selected?.image && (
-            <img src={selected.image} alt="" className="h-6 w-6 rounded object-cover flex-shrink-0" />
+            <img src={getMediaPreviewUrl(selected.image)} alt="" className="h-6 w-6 rounded object-cover flex-shrink-0" />
           )}
           <span className={value ? "text-gray-900" : "text-gray-400"}>
             {value || "Select or add a subject"}
@@ -312,13 +320,13 @@ export function SubjectPicker({ value, onChange }: SubjectPickerProps) {
                 <button
                   type="button"
                   onClick={() => {
-                    onChange(s.name, s.id);
+                    onChange(s.name, s.id, s.image);
                     setShowList(false);
                   }}
                   className="flex flex-1 items-center gap-3 text-left min-w-0"
                 >
                   {s.image ? (
-                    <img src={s.image} alt="" className="h-7 w-7 rounded object-cover flex-shrink-0" />
+                    <img src={getMediaPreviewUrl(s.image)} alt="" className="h-7 w-7 rounded object-cover flex-shrink-0" />
                   ) : (
                     <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded bg-gray-100 text-xs">
                       📘
